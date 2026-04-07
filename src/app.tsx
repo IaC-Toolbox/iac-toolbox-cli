@@ -90,7 +90,7 @@ function LoadingDots() {
   useEffect(() => {
     const interval = setInterval(() => {
       setDots((currentDots) =>
-        currentDots.length >= 3 ? '' : `${currentDots}.`,
+        currentDots.length >= 3 ? '' : `${currentDots}.`
       );
     }, 400);
 
