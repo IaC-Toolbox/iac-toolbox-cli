@@ -1,0 +1,27 @@
+{
+  "name": "iac-toolbox-cli",
+  "version": "1.0.0",
+  "description": "Infrastructure as Code Toolbox CLI",
+  "bin": {
+    "iac": "./src/cli.js"
+  },
+  "scripts": {
+    "start": "babel-node src/cli.js",
+    "dev": "babel-node src/cli.js"
+  },
+  "dependencies": {
+    "ink": "^5.1.0",
+    "react": "^18.3.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IaC-Toolbox/iac-toolbox-cli.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/node": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5"
+  }
+}
