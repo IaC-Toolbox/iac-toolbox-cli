@@ -8,6 +8,8 @@ export type WizardStepStatus =
   | 'failed'
   | 'skipped';
 
+export type WizardMockOutcome = 'success' | 'failed';
+
 export type WizardStep = {
   id: string;
   title: string;
@@ -17,6 +19,8 @@ export type WizardStep = {
   description: string[];
   preview: string[];
   optional?: boolean;
+  mockOutcome?: WizardMockOutcome;
+  mockFailure?: string;
 };
 
 export type WizardState = {
@@ -171,6 +175,9 @@ const playbookSteps: WizardStep[] = [
       'Would register the runner and enable the service.',
     ],
     optional: true,
+    mockOutcome: 'failed',
+    mockFailure:
+      'Mocked backend result: registration token is missing, so the runner step ends in a visible failure state.',
   },
 ];
 
@@ -389,12 +396,15 @@ export async function runCurrentStep(state: WizardState): Promise<WizardState> {
 
   await delay(getMockDuration(currentStep));
 
-  return advanceFromCurrent(runningState, 'success');
+  return advanceFromCurrent(
+    runningState,
+    currentStep.mockOutcome ?? 'success'
+  );
 }
 
 function advanceFromCurrent(
   state: WizardState,
-  finishedStatus: Extract<WizardStepStatus, 'success' | 'skipped'>
+  finishedStatus: Extract<WizardStepStatus, 'success' | 'skipped' | 'failed'>
 ): WizardState {
   const currentStep = getCurrentStep(state);
   const nextIndex = Math.min(

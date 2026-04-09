@@ -30,7 +30,7 @@ The phase-1 CLI replaces the old hello-world app with a guided Ink wizard that w
    - `github runner`
 7. Summary
 
-The wizard is UI-only in this phase. It shows mocked running states and per-step status markers, but it does not execute real install commands, clone repositories, collect API keys, or write environment files.
+The wizard is UI-only in this phase. It shows mocked running states, per-step status markers, and a mocked failure path on the `github runner` step so the summary can exercise completed, skipped, and failed outcomes. It does not execute real install commands, clone repositories, collect API keys, or write environment files.
 
 ## Controls
 

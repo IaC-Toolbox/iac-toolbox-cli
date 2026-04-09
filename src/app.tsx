@@ -1,5 +1,5 @@
 import { Box, Text, useApp, useInput, useStdin } from 'ink';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   canGoBack,
   createWizardState,
@@ -238,9 +238,22 @@ function StepScreen({ step, status }: StepScreenProps) {
         <Text color={SLATE}>{getApprovalCopy(step)}</Text>
       </Box>
 
+      {step.mockOutcome === 'failed' ? (
+        <Box flexDirection="column" marginTop={1}>
+          <Text color={RED} bold>
+            Mocked failure path
+          </Text>
+          <Text color={SLATE}>
+            This step is intentionally mocked to fail after approval so the
+            wizard can exercise failed progress markers and summary output.
+          </Text>
+          {step.mockFailure ? <Text color={SLATE}>- {step.mockFailure}</Text> : null}
+        </Box>
+      ) : null}
+
       {status === 'running' ? (
         <Box marginTop={1}>
-          <Text color={VIOLET}>Mocked execution in progress…</Text>
+          <Text color={VIOLET}>Mocked execution in progress...</Text>
         </Box>
       ) : null}
     </Box>
@@ -327,9 +340,12 @@ function SummaryScreen({ state }: SummaryProps) {
         </Text>
         {failed.length > 0 ? (
           failed.map((step) => (
-            <Text key={step.id} color={SLATE}>
-              - {step.title}
-            </Text>
+            <Box key={step.id} flexDirection="column">
+              <Text color={SLATE}>- {step.title}</Text>
+              {step.mockFailure ? (
+                <Text color={SLATE}>  {step.mockFailure}</Text>
+              ) : null}
+            </Box>
           ))
         ) : (
           <Text color={SLATE}>- No failures in mocked mode</Text>
@@ -455,17 +471,15 @@ export default function App() {
     { isActive: isRawModeSupported }
   );
 
-  const viewState = useMemo(() => wizardState, [wizardState]);
-
   return (
     <Box flexDirection="column" padding={1}>
       <Header />
       <Box>
-        <Sidebar state={viewState} />
+        <Sidebar state={wizardState} />
         <Box flexDirection="column" marginLeft={1} flexGrow={1}>
-          <ProgressPanel state={viewState} step={currentStep} />
+          <ProgressPanel state={wizardState} step={currentStep} />
           {isSummary ? (
-            <SummaryScreen state={viewState} />
+            <SummaryScreen state={wizardState} />
           ) : (
             <StepScreen step={currentStep} status={currentStatus} />
           )}
@@ -484,7 +498,7 @@ export default function App() {
             </Box>
           ) : null}
           <Footer
-            canGoBackToPrevious={canGoBack(viewState)}
+            canGoBackToPrevious={canGoBack(wizardState)}
             canSkip={!isSummary}
             isRunning={isProcessing || currentStatus === 'running'}
             isSummary={isSummary}
