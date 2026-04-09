@@ -19,7 +19,8 @@
     "lint:fix": "npm run lint -- --fix",
     "lint-fix": "npm run lint -- --fix",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "evidence": "bash scripts/capture-terminal-evidence.sh"
   },
   "dependencies": {
     "ink": "^5.1.0",

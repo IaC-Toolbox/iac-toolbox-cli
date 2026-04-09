@@ -26,6 +26,7 @@ npm run lint
 npm run lint:fix
 npm run format
 npm run format:check
+npm run evidence
 ```
 
 - `npm run dev` runs the CLI directly from TypeScript via `tsx`
@@ -34,6 +35,7 @@ npm run format:check
 - `npm run typecheck` runs TypeScript without emitting files
 - `npm run lint` and `npm run lint:fix` run ESLint
 - `npm run format` and `npm run format:check` run Prettier
+- `npm run evidence` captures a terminal-run evidence artifact for headless PR validation
 
 ## Stack
 
