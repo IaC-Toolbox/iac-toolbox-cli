@@ -1,12 +1,43 @@
 # iac-toolbox-cli
 
-A beautiful terminal CLI for Infrastructure as Code workflows, built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs).
+An Ink-based terminal CLI for Infrastructure as Code workflows.
 
 ## Features
 
-- 🎨 Fumadocs-inspired colour scheme (purple/violet/cyan)
-- ⚡ React-based terminal UI via Ink
-- 🏗️ Ready to extend with IaC commands
+- Interactive setup wizard for the Raspberry Pi flow
+- Mocked step engine for approve, skip, and back navigation
+- Visible progress and a final summary screen
+- React-based terminal UI via [Ink](https://github.com/vadimdemedes/ink)
+
+## Wizard Flow
+
+The phase-1 CLI replaces the old hello-world app with a guided Ink wizard that walks through:
+
+1. Welcome
+2. Install Ansible
+3. Install Terraform
+4. Bootstrap repository notice for `IaC-Toolbox/iac-toolbox-raspberrypi`
+5. Playbook overview
+6. Individual playbook steps for:
+   - `base/setup`
+   - `docker`
+   - `vault`
+   - `cloudflare tunnel`
+   - `grafana`
+   - `prometheus`
+   - `loki`
+   - `openclaw`
+   - `github runner`
+7. Summary
+
+The wizard is UI-only in this phase. It shows mocked running states and per-step status markers, but it does not execute real install commands, clone repositories, collect API keys, or write environment files.
+
+## Controls
+
+- `Enter` continues or approves the current step
+- `s` skips the current step when skipping is available
+- `b` returns to the previous step when going back is available
+- `q` quits the wizard
 
 ## Getting Started
 
@@ -14,6 +45,8 @@ A beautiful terminal CLI for Infrastructure as Code workflows, built with [Ink](
 npm install
 npm run dev
 ```
+
+The current wizard phase is UI only. It does not execute real install commands.
 
 ## Scripts
 
