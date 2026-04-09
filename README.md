@@ -42,3 +42,4 @@ npm run format:check
 - TypeScript
 - ESLint + Prettier
 - Node.js ESM modules
+- Terminal run evidence should be attached to PRs when validating CLI changes
