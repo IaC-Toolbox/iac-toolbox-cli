@@ -12,7 +12,7 @@ import {
   wizardSteps,
   type WizardState,
   type WizardStep,
-  type WizardStepStatus
+  type WizardStepStatus,
 } from './wizard.js';
 
 const VIOLET = '#7c3aed';
@@ -264,9 +264,15 @@ type SummaryProps = {
 };
 
 function SummaryScreen({ state }: SummaryProps) {
-  const completed = state.steps.filter((step) => state.statuses[step.id] === 'success');
-  const skipped = state.steps.filter((step) => state.statuses[step.id] === 'skipped');
-  const failed = state.steps.filter((step) => state.statuses[step.id] === 'failed');
+  const completed = state.steps.filter(
+    (step) => state.statuses[step.id] === 'success'
+  );
+  const skipped = state.steps.filter(
+    (step) => state.statuses[step.id] === 'skipped'
+  );
+  const failed = state.steps.filter(
+    (step) => state.statuses[step.id] === 'failed'
+  );
 
   return (
     <Box
@@ -281,7 +287,8 @@ function SummaryScreen({ state }: SummaryProps) {
         Setup summary
       </Text>
       <Text color={SLATE}>
-        This phase is mocked, but the flow, skip behaviour, and progress model are now in place.
+        This phase is mocked, but the flow, skip behaviour, and progress model
+        are now in place.
       </Text>
 
       <Box flexDirection="column" marginTop={1}>
@@ -333,9 +340,15 @@ function SummaryScreen({ state }: SummaryProps) {
         <Text color={WHITE} bold>
           Pending in later milestones
         </Text>
-        <Text color={SLATE}>- Replace mocked delays with a real command runner</Text>
-        <Text color={SLATE}>- Add concrete command previews and approval details</Text>
-        <Text color={SLATE}>- Collect environment values and persist real setup state</Text>
+        <Text color={SLATE}>
+          - Replace mocked delays with a real command runner
+        </Text>
+        <Text color={SLATE}>
+          - Add concrete command previews and approval details
+        </Text>
+        <Text color={SLATE}>
+          - Collect environment values and persist real setup state
+        </Text>
       </Box>
     </Box>
   );
@@ -348,7 +361,12 @@ type FooterProps = {
   isSummary: boolean;
 };
 
-function Footer({ canGoBackToPrevious, canSkip, isRunning, isSummary }: FooterProps) {
+function Footer({
+  canGoBackToPrevious,
+  canSkip,
+  isRunning,
+  isSummary,
+}: FooterProps) {
   const actions = [`Enter: ${isSummary ? 'finish' : 'continue / approve'}`];
 
   if (canSkip) {
@@ -385,7 +403,9 @@ function Footer({ canGoBackToPrevious, canSkip, isRunning, isSummary }: FooterPr
 export default function App() {
   const { exit } = useApp();
   const { isRawModeSupported } = useStdin();
-  const [wizardState, setWizardState] = useState(() => createWizardState(wizardSteps));
+  const [wizardState, setWizardState] = useState(() =>
+    createWizardState(wizardSteps)
+  );
   const [isProcessing, setIsProcessing] = useState(false);
   const currentStep = getCurrentStep(wizardState);
   const currentStatus = getDisplayStatus(
@@ -458,7 +478,8 @@ export default function App() {
               paddingY={0}
             >
               <Text color={YELLOW}>
-                Interactive input is unavailable in this terminal. Run the CLI in a real TTY to use continue, skip, back, and quit controls.
+                Interactive input is unavailable in this terminal. Run the CLI
+                in a real TTY to use continue, skip, back, and quit controls.
               </Text>
             </Box>
           ) : null}

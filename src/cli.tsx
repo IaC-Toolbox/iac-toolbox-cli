@@ -4,5 +4,5 @@ import App from './app.js';
 
 render(<App />, {
   exitOnCtrlC: true,
-  patchConsole: false
+  patchConsole: false,
 });
