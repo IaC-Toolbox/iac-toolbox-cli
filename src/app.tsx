@@ -11,21 +11,22 @@ const options = [
   {
     id: 'install-all',
     label: 'Install all',
-    description: 'Run the full terminal app installation flow.',
   },
   {
     id: 'skip',
     label: 'Skip',
-    description: 'Exit without starting installation.',
   },
 ] as const;
 
 type OptionId = (typeof options)[number]['id'];
 
-type SelectionState = {
-  selectedIndex: number;
-  confirmed: OptionId | null;
-};
+function moveSelection(currentIndex: number, direction: 'up' | 'down') {
+  if (direction === 'up') {
+    return currentIndex === 0 ? options.length - 1 : currentIndex - 1;
+  }
+
+  return currentIndex === options.length - 1 ? 0 : currentIndex + 1;
+}
 
 function Header() {
   return (
@@ -33,51 +34,64 @@ function Header() {
       <Text color={WHITE} bold>
         IaC Toolbox CLI
       </Text>
-      <Text color={SLATE}>Choose an action and press Enter.</Text>
+      <Text color={SLATE}>Select an option with ↑/↓ and press Enter.</Text>
     </Box>
   );
 }
 
-type MenuProps = {
-  selectedIndex: number;
-};
-
-function Menu({ selectedIndex }: MenuProps) {
+function Menu({ selectedIndex }: { selectedIndex: number }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={CYAN} paddingX={1} paddingY={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={CYAN}
+      paddingX={1}
+      paddingY={1}
+    >
       {options.map((option, index) => {
         const isSelected = index === selectedIndex;
 
         return (
-          <Box key={option.id} flexDirection="column" marginBottom={index === options.length - 1 ? 0 : 1}>
-            <Text color={isSelected ? GREEN : WHITE} bold={isSelected}>
-              {isSelected ? '›' : ' '} {option.label}
-            </Text>
-            <Text color={SLATE}>{option.description}</Text>
-          </Box>
+          <Text key={option.id} color={isSelected ? GREEN : WHITE} bold={isSelected}>
+            {isSelected ? '›' : ' '} {option.label}
+          </Text>
         );
       })}
     </Box>
   );
 }
 
-type ResultProps = {
-  confirmed: OptionId;
-};
-
-function Result({ confirmed }: ResultProps) {
-  const isInstallAll = confirmed === 'install-all';
+function Result({ confirmed }: { confirmed: OptionId }) {
+  if (confirmed === 'install-all') {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor={GREEN}
+        paddingX={1}
+        paddingY={1}
+      >
+        <Text color={WHITE} bold>
+          Install all selected
+        </Text>
+        <Text color={SLATE}>Install flow placeholder accepted.</Text>
+        <Text color={SLATE}>Press Enter, Escape, or Q to exit.</Text>
+      </Box>
+    );
+  }
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isInstallAll ? GREEN : YELLOW} paddingX={1} paddingY={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={YELLOW}
+      paddingX={1}
+      paddingY={1}
+    >
       <Text color={WHITE} bold>
-        {isInstallAll ? 'Install all selected' : 'Skip selected'}
+        Skip selected
       </Text>
-      <Text color={SLATE}>
-        {isInstallAll
-          ? 'The new minimal UI is wired. Next step is attaching this selection to the real install flow.'
-          : 'No installation was started.'}
-      </Text>
+      <Text color={SLATE}>Nothing will be installed.</Text>
       <Text color={SLATE}>Press Enter, Escape, or Q to exit.</Text>
     </Box>
   );
@@ -86,7 +100,7 @@ function Result({ confirmed }: ResultProps) {
 function Footer() {
   return (
     <Box marginTop={1}>
-      <Text color={SLATE}>↑/↓ move   Enter confirm   Q quit</Text>
+      <Text color={SLATE}>↑/↓ move   Enter select   Q quit</Text>
     </Box>
   );
 }
@@ -94,10 +108,8 @@ function Footer() {
 export default function App() {
   const { exit } = useApp();
   const { isRawModeSupported } = useStdin();
-  const [state, setState] = useState<SelectionState>({
-    selectedIndex: 0,
-    confirmed: null,
-  });
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [confirmed, setConfirmed] = useState<OptionId | null>(null);
 
   useInput(
     (input, key) => {
@@ -106,41 +118,25 @@ export default function App() {
         return;
       }
 
-      if (state.confirmed) {
+      if (confirmed) {
         if (key.return) {
           exit();
         }
-
         return;
       }
 
       if (key.upArrow) {
-        setState((previous) => ({
-          ...previous,
-          selectedIndex:
-            previous.selectedIndex === 0
-              ? options.length - 1
-              : previous.selectedIndex - 1,
-        }));
+        setSelectedIndex((currentIndex) => moveSelection(currentIndex, 'up'));
         return;
       }
 
       if (key.downArrow) {
-        setState((previous) => ({
-          ...previous,
-          selectedIndex:
-            previous.selectedIndex === options.length - 1
-              ? 0
-              : previous.selectedIndex + 1,
-        }));
+        setSelectedIndex((currentIndex) => moveSelection(currentIndex, 'down'));
         return;
       }
 
       if (key.return) {
-        setState((previous) => ({
-          ...previous,
-          confirmed: options[previous.selectedIndex].id,
-        }));
+        setConfirmed(options[selectedIndex].id);
       }
     },
     { isActive: isRawModeSupported }
@@ -149,19 +145,11 @@ export default function App() {
   return (
     <Box flexDirection="column" padding={1}>
       <Header />
-      {state.confirmed ? (
-        <Result confirmed={state.confirmed} />
-      ) : (
-        <>
-          <Menu selectedIndex={state.selectedIndex} />
-          <Footer />
-        </>
-      )}
+      {confirmed ? <Result confirmed={confirmed} /> : <Menu selectedIndex={selectedIndex} />}
+      {!confirmed ? <Footer /> : null}
       {!isRawModeSupported ? (
         <Box marginTop={1}>
-          <Text color={YELLOW}>
-            Interactive input is unavailable in this terminal. Run the CLI in a real TTY.
-          </Text>
+          <Text color={YELLOW}>Interactive input is unavailable in this terminal. Run the CLI in a real TTY.</Text>
         </Box>
       ) : null}
     </Box>
