@@ -10,7 +10,7 @@ Bring `iac-toolbox-cli` onto a cleaner TypeScript-based developer workflow with 
 - add a TypeScript configuration suitable for a small Node-based Ink CLI
 - add linting in the style Viktor commonly uses in other projects
 - add formatting support
-- expose npm commands for lint and format
+- expose Bun commands for lint and format
 - keep the setup straightforward and easy to extend
 
 ## Proposed implementation
@@ -126,7 +126,7 @@ src/react-app-env.d.ts
 
 Prefer these conventions where they fit this CLI project:
 
-- add `engines` for modern Node/npm versions when appropriate
+- add `engines` for modern Node/Bun versions when appropriate
 - use `typescript`, `eslint`, `prettier`, `@typescript-eslint/*`, `eslint-config-prettier`, `eslint-plugin-prettier`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, and `eslint-plugin-react-refresh`
 - prefer a `lint` script shaped like:
   - `tsc --noEmit && eslint . --ext .js,.jsx,.ts,.tsx`
