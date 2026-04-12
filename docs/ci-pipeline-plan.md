@@ -8,16 +8,16 @@ Add a simple GitHub Actions pipeline that runs on pull requests and verifies the
 
 Run these on each PR:
 
-- `npm run lint`
-- `npm run format:check`
-- `npm run build`
+- `pnpm run lint`
+- `pnpm run format:check`
+- `pnpm run build`
 
 ## Proposed implementation
 
 1. Add a workflow under `.github/workflows/ci.yml`
 2. Trigger it on `pull_request`
 3. Use a current Node.js version compatible with the repo engines
-4. Install dependencies with `npm ci`
+4. Install dependencies with `pnpm install --frozen-lockfile`
 5. Run lint, prettier check, and build as separate steps
 
 ## Notes

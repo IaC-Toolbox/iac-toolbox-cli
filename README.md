@@ -11,29 +11,29 @@ A beautiful terminal CLI for Infrastructure as Code workflows, built with [Ink](
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ## Scripts
 
 ```bash
-npm run dev
-npm run build
-npm start
-npm run typecheck
-npm run lint
-npm run lint:fix
-npm run format
-npm run format:check
+pnpm run dev
+pnpm run build
+pnpm start
+pnpm run typecheck
+pnpm run lint
+pnpm run lint:fix
+pnpm run format
+pnpm run format:check
 ```
 
-- `npm run dev` runs the CLI directly from TypeScript via `tsx`
-- `npm run build` compiles the CLI into `dist/`
-- `npm start` runs the compiled CLI from `dist/cli.js`
-- `npm run typecheck` runs TypeScript without emitting files
-- `npm run lint` and `npm run lint:fix` run ESLint
-- `npm run format` and `npm run format:check` run Prettier
+- `pnpm run dev` runs the CLI directly from TypeScript via `tsx`
+- `pnpm run build` compiles the CLI into `dist/`
+- `pnpm start` runs the compiled CLI from `dist/cli.js`
+- `pnpm run typecheck` runs TypeScript without emitting files
+- `pnpm run lint` and `pnpm run lint:fix` run ESLint
+- `pnpm run format` and `pnpm run format:check` run Prettier
 
 ## Stack
 
