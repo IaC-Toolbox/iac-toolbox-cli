@@ -42,8 +42,8 @@ The wizard is UI-only in this phase. It shows mocked running states and per-step
 ## Getting Started
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 The current wizard phase is UI only. It does not execute real install commands.
@@ -51,22 +51,22 @@ The current wizard phase is UI only. It does not execute real install commands.
 ## Scripts
 
 ```bash
-npm run dev
-npm run build
-npm start
-npm run typecheck
-npm run lint
-npm run lint:fix
-npm run format
-npm run format:check
+pnpm dev
+pnpm build
+pnpm start
+pnpm typecheck
+pnpm lint
+pnpm lint:fix
+pnpm format
+pnpm format:check
 ```
 
-- `npm run dev` runs the CLI directly from TypeScript via `tsx`
-- `npm run build` compiles the CLI into `dist/`
-- `npm start` runs the compiled CLI from `dist/cli.js`
-- `npm run typecheck` runs TypeScript without emitting files
-- `npm run lint` and `npm run lint:fix` run ESLint
-- `npm run format` and `npm run format:check` run Prettier
+- `pnpm dev` runs the CLI directly from TypeScript via `tsx`
+- `pnpm build` compiles the CLI into `dist/`
+- `pnpm start` runs the compiled CLI from `dist/cli.js`
+- `pnpm typecheck` runs TypeScript without emitting files
+- `pnpm lint` and `pnpm lint:fix` run ESLint
+- `pnpm format` and `pnpm format:check` run Prettier
 
 ## Stack
 
