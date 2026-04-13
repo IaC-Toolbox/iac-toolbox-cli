@@ -2,6 +2,8 @@
 
 A beautiful terminal CLI for Infrastructure as Code workflows, built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs).
 
+heartbeat test
+
 ## Features
 
 - 🎨 Fumadocs-inspired colour scheme (purple/violet/cyan)
