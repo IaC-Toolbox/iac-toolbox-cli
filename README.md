@@ -34,10 +34,9 @@ The wizard is UI-only in this phase. It shows mocked running states and per-step
 
 ## Controls
 
-- `Enter` continues or approves the current step
-- `s` skips the current step when skipping is available
-- `b` returns to the previous step when going back is available
-- `q` quits the wizard
+- `Up` and `Down` move through the selectable action list
+- `Enter` confirms the selected action
+- Available actions include continue or approve, skip when available, back when available, and quit
 
 ## Getting Started
 
@@ -53,6 +52,7 @@ The current wizard phase is UI only. It does not execute real install commands.
 ```bash
 pnpm dev
 pnpm build
+pnpm test
 pnpm start
 pnpm typecheck
 pnpm lint
@@ -63,6 +63,7 @@ pnpm format:check
 
 - `pnpm dev` runs the CLI directly from TypeScript via `tsx`
 - `pnpm build` compiles the CLI into `dist/`
+- `pnpm test` runs the lightweight navigation tests
 - `pnpm start` runs the compiled CLI from `dist/cli.js`
 - `pnpm typecheck` runs TypeScript without emitting files
 - `pnpm lint` and `pnpm lint:fix` run ESLint

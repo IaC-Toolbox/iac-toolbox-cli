@@ -15,6 +15,7 @@
     "dev": "tsx src/cli.tsx",
     "build": "tsc --project tsconfig.json",
     "start": "node dist/cli.js",
+    "test": "tsx --test test/**/*.test.ts",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "lint": "tsc --noEmit && eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "pnpm run lint -- --fix",

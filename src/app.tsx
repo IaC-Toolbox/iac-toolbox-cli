@@ -1,190 +1,256 @@
-import { Box, Text, useInput } from 'ink';
+import { Box, Text, useApp, useInput } from 'ink';
 import { useMemo, useState } from 'react';
 
-type WizardOption = {
+import { moveSelection } from './navigation.js';
+import {
+  canGoBack,
+  createWizardState,
+  getCurrentStep,
+  getDisplayStatus,
+  getProgress,
+  goBack,
+  runCurrentStep,
+  skipCurrentStep,
+  wizardSteps,
+  type WizardState,
+  type WizardStep,
+  type WizardStepStatus,
+} from './wizard.js';
+
+type WizardActionId = 'run' | 'skip' | 'back' | 'quit';
+
+type WizardAction = {
+  id: WizardActionId;
   label: string;
   description: string;
 };
 
-type WizardStep = {
-  id: 'workflow' | 'tool' | 'nextStep';
-  title: string;
-  prompt: string;
-  options: WizardOption[];
+const statusLabels: Record<WizardStepStatus, string> = {
+  idle: 'idle',
+  ready: 'ready',
+  running: 'running',
+  success: 'done',
+  failed: 'failed',
+  skipped: 'skipped',
 };
 
-type WizardAnswers = Partial<Record<WizardStep['id'], WizardOption>>;
+const statusColors: Partial<Record<WizardStepStatus, string>> = {
+  ready: 'cyan',
+  running: 'yellow',
+  success: 'green',
+  failed: 'red',
+  skipped: 'gray',
+};
 
-const STEPS: WizardStep[] = [
-  {
-    id: 'workflow',
-    title: 'Workflow',
-    prompt: 'What do you want to prepare?',
-    options: [
-      {
-        label: 'Review an existing project',
-        description: 'Collect context before adding real checks.',
-      },
-      {
-        label: 'Plan a change',
-        description: 'Shape the next IaC operation before execution exists.',
-      },
-      {
-        label: 'Start from a template',
-        description: 'Capture the intent for a future scaffold command.',
-      },
-    ],
-  },
-  {
-    id: 'tool',
-    title: 'IaC tool',
-    prompt: 'Which tool should this wizard focus on?',
-    options: [
-      {
-        label: 'Terraform',
-        description: 'Use the Terraform path when actions are wired in.',
-      },
-      {
-        label: 'OpenTofu',
-        description: 'Use the OpenTofu path when actions are wired in.',
-      },
-      {
-        label: 'Not sure yet',
-        description: 'Keep the plan tool-neutral for now.',
-      },
-    ],
-  },
-  {
-    id: 'nextStep',
-    title: 'Next step',
-    prompt: 'What should happen after this preview?',
-    options: [
-      {
-        label: 'Show summary only',
-        description: 'Finish without running an IaC command.',
-      },
-      {
-        label: 'Save for later',
-        description: 'Reserve this path for a future persistence command.',
-      },
-      {
-        label: 'Run checks later',
-        description: 'Reserve this path for future validation commands.',
-      },
-    ],
-  },
-];
+function getPrimaryAction(step: WizardStep): WizardAction {
+  if (step.kind === 'summary') {
+    return {
+      id: 'quit',
+      label: 'Finish and exit',
+      description: 'Close the mocked wizard after reviewing the summary.',
+    };
+  }
 
-function WizardOptionRow({
-  option,
+  if (step.kind === 'info') {
+    return {
+      id: 'run',
+      label: 'Continue',
+      description: 'Acknowledge this screen and move to the next step.',
+    };
+  }
+
+  return {
+    id: 'run',
+    label: 'Approve and continue',
+    description: 'Run the mocked step and move forward when it completes.',
+  };
+}
+
+function getActions(state: WizardState, step: WizardStep): WizardAction[] {
+  const actions = [getPrimaryAction(step)];
+
+  if (step.optional && step.kind !== 'summary') {
+    actions.push({
+      id: 'skip',
+      label: 'Skip this step',
+      description: 'Mark this step as skipped and continue through the flow.',
+    });
+  }
+
+  if (canGoBack(state)) {
+    actions.push({
+      id: 'back',
+      label: 'Go back',
+      description: 'Return to the previous wizard step.',
+    });
+  }
+
+  if (step.kind !== 'summary') {
+    actions.push({
+      id: 'quit',
+      label: 'Quit wizard',
+      description: 'Exit without running any real install command.',
+    });
+  }
+
+  return actions;
+}
+
+function WizardActionRow({
+  action,
   isSelected,
 }: {
-  option: WizardOption;
+  action: WizardAction;
   isSelected: boolean;
 }) {
   return (
     <Box flexDirection="column" marginTop={1}>
       <Text color={isSelected ? 'cyan' : undefined} bold={isSelected}>
         {isSelected ? '> ' : '  '}
-        {option.label}
+        {action.label}
       </Text>
       <Box marginLeft={2}>
-        <Text color="gray">{option.description}</Text>
+        <Text color="gray">{action.description}</Text>
       </Box>
     </Box>
   );
 }
 
-function AnswerSummary({ answers }: { answers: WizardAnswers }) {
+function StepList({ state }: { state: WizardState }) {
   return (
     <Box flexDirection="column" marginTop={1}>
-      {STEPS.map((step) => (
-        <Text key={step.id}>
-          <Text color="gray">{step.title}: </Text>
-          {answers[step.id]?.label ?? 'Not selected'}
-        </Text>
-      ))}
+      <Text bold>Install flow</Text>
+      {state.steps.map((step, index) => {
+        const status = getDisplayStatus(state, step.id, index);
+        const marker = index === state.currentStepIndex ? '>' : ' ';
+
+        return (
+          <Text key={step.id} color={statusColors[status]}>
+            {marker} {step.shortTitle} [{statusLabels[status]}]
+          </Text>
+        );
+      })}
     </Box>
   );
 }
 
-export default function App() {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
-  const [answers, setAnswers] = useState<WizardAnswers>({});
+function StepDetails({ step }: { step: WizardStep }) {
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Text bold>{step.title}</Text>
+      <Text>{step.summary}</Text>
+      {step.description.map((line) => (
+        <Text key={line} color="gray">
+          {line}
+        </Text>
+      ))}
+      <Box flexDirection="column" marginTop={1}>
+        {step.preview.map((line) => (
+          <Text key={line} color="gray">
+            - {line}
+          </Text>
+        ))}
+      </Box>
+    </Box>
+  );
+}
 
-  const currentStep = STEPS[currentStepIndex];
-  const isComplete = currentStepIndex >= STEPS.length;
-  const progress = useMemo(
-    () => `${Math.min(currentStepIndex + 1, STEPS.length)} of ${STEPS.length}`,
-    [currentStepIndex]
+function ProgressSummary({ state }: { state: WizardState }) {
+  const progress = getProgress(state);
+
+  return (
+    <Text color="gray">
+      Completed {progress.completed} | Skipped {progress.skipped} | Failed{' '}
+      {progress.failed} | Remaining {progress.remaining}
+    </Text>
+  );
+}
+
+export default function App() {
+  const { exit } = useApp();
+  const [state, setState] = useState(() => createWizardState(wizardSteps));
+  const [selectedActionIndex, setSelectedActionIndex] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const currentStep = getCurrentStep(state);
+  const actions = useMemo(
+    () => getActions(state, currentStep),
+    [currentStep, state]
   );
 
   useInput((_input, key) => {
-    if (isComplete || !currentStep) {
+    if (isRunning) {
       return;
     }
 
     if (key.upArrow) {
-      setSelectedOptionIndex((index) =>
-        index === 0 ? currentStep.options.length - 1 : index - 1
+      setSelectedActionIndex((index) =>
+        moveSelection(index, actions.length, 'up')
       );
       return;
     }
 
     if (key.downArrow) {
-      setSelectedOptionIndex((index) =>
-        index === currentStep.options.length - 1 ? 0 : index + 1
+      setSelectedActionIndex((index) =>
+        moveSelection(index, actions.length, 'down')
       );
       return;
     }
 
     if (key.return) {
-      setAnswers((currentAnswers) => ({
-        ...currentAnswers,
-        [currentStep.id]: currentStep.options[selectedOptionIndex],
-      }));
-      setCurrentStepIndex((index) => index + 1);
-      setSelectedOptionIndex(0);
+      const action = actions[selectedActionIndex];
+
+      if (action.id === 'quit') {
+        exit();
+        return;
+      }
+
+      setSelectedActionIndex(0);
+
+      if (action.id === 'back') {
+        setState((currentState) => goBack(currentState));
+        return;
+      }
+
+      if (action.id === 'skip') {
+        setState((currentState) => skipCurrentStep(currentState));
+        return;
+      }
+
+      setIsRunning(true);
+      void runCurrentStep(state).then((nextState) => {
+        setState(nextState);
+        setSelectedActionIndex(0);
+        setIsRunning(false);
+      });
     }
   });
 
-  if (isComplete) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold>IaC Toolbox wizard</Text>
-        <Text color="green">Wizard complete.</Text>
-        <AnswerSummary answers={answers} />
-        <Box marginTop={1} flexDirection="column">
-          <Text>No backend action was run.</Text>
-          <Text color="gray">Press Ctrl+C to exit.</Text>
-        </Box>
-      </Box>
-    );
-  }
-
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold>IaC Toolbox wizard</Text>
-      <Text color="gray">Step {progress}</Text>
+      <Text bold>IaC Toolbox install wizard</Text>
+      <ProgressSummary state={state} />
+
+      <StepList state={state} />
+      <StepDetails step={currentStep} />
 
       <Box flexDirection="column" marginTop={1}>
-        <Text bold>{currentStep.title}</Text>
-        <Text>{currentStep.prompt}</Text>
-      </Box>
-
-      <Box flexDirection="column" marginTop={1}>
-        {currentStep.options.map((option, index) => (
-          <WizardOptionRow
-            key={option.label}
-            option={option}
-            isSelected={index === selectedOptionIndex}
+        <Text bold>Actions</Text>
+        {actions.map((action, index) => (
+          <WizardActionRow
+            key={action.id}
+            action={action}
+            isSelected={index === selectedActionIndex}
           />
         ))}
       </Box>
 
       <Box marginTop={1}>
-        <Text color="gray">Use Up/Down to choose, Enter to continue.</Text>
+        <Text color="gray">
+          {isRunning
+            ? 'Running mocked step...'
+            : 'Use Up/Down to choose, Enter to select.'}
+        </Text>
       </Box>
     </Box>
   );
