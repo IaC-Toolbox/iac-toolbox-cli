@@ -6,24 +6,40 @@ type WizardOption = {
   description: string;
 };
 
-type WizardStep = {
+type OptionWizardStep = {
   id: 'workflow' | 'tool' | 'nextStep';
+  kind: 'option';
   title: string;
   prompt: string;
   options: WizardOption[];
 };
 
-type WizardAnswers = Partial<Record<WizardStep['id'], WizardOption>>;
+type FolderWizardStep = {
+  id: 'snippetFolder';
+  kind: 'folder';
+  title: string;
+  prompt: string;
+  defaultValue: string;
+};
+
+type WizardStep = OptionWizardStep | FolderWizardStep;
+
+type WizardAnswers = Partial<Record<OptionWizardStep['id'], WizardOption>> & {
+  snippetFolder?: string;
+};
+
+const defaultSnippetFolder = process.cwd();
 
 const STEPS: WizardStep[] = [
   {
     id: 'workflow',
+    kind: 'option',
     title: 'Workflow',
     prompt: 'What do you want to prepare?',
     options: [
       {
-        label: 'Review an existing project',
-        description: 'Collect context before adding real checks.',
+        label: 'Download Raspberry Pi snippets',
+        description: 'Prepare setup assets before installation begins.',
       },
       {
         label: 'Plan a change',
@@ -36,7 +52,15 @@ const STEPS: WizardStep[] = [
     ],
   },
   {
+    id: 'snippetFolder',
+    kind: 'folder',
+    title: 'Raspberry Pi snippet folder',
+    prompt: 'Where should Raspberry Pi snippets be downloaded?',
+    defaultValue: defaultSnippetFolder,
+  },
+  {
     id: 'tool',
+    kind: 'option',
     title: 'IaC tool',
     prompt: 'Which tool should this wizard focus on?',
     options: [
@@ -56,12 +80,13 @@ const STEPS: WizardStep[] = [
   },
   {
     id: 'nextStep',
+    kind: 'option',
     title: 'Next step',
     prompt: 'What should happen after this preview?',
     options: [
       {
-        label: 'Show summary only',
-        description: 'Finish without running an IaC command.',
+        label: 'Install from selected folder',
+        description: 'Use the downloaded snippets from the chosen location.',
       },
       {
         label: 'Save for later',
@@ -95,13 +120,37 @@ function WizardOptionRow({
   );
 }
 
+function FolderPrompt({
+  value,
+  defaultValue,
+}: {
+  value: string;
+  defaultValue: string;
+}) {
+  const displayValue = value.length > 0 ? value : defaultValue;
+
+  return (
+    <Box flexDirection="column" marginTop={1}>
+      <Text>
+        <Text color="cyan">{displayValue}</Text>
+        {value.length === 0 ? <Text color="gray"> (default)</Text> : null}
+      </Text>
+      <Text color="gray">Type a path or press Enter to use the default.</Text>
+    </Box>
+  );
+}
+
 function AnswerSummary({ answers }: { answers: WizardAnswers }) {
+  const snippetFolder = answers.snippetFolder ?? defaultSnippetFolder;
+
   return (
     <Box flexDirection="column" marginTop={1}>
       {STEPS.map((step) => (
         <Text key={step.id}>
           <Text color="gray">{step.title}: </Text>
-          {answers[step.id]?.label ?? 'Not selected'}
+          {step.kind === 'folder'
+            ? snippetFolder
+            : answers[step.id]?.label ?? 'Not selected'}
         </Text>
       ))}
     </Box>
@@ -111,10 +160,12 @@ function AnswerSummary({ answers }: { answers: WizardAnswers }) {
 export default function App() {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState(0);
+  const [snippetFolderInput, setSnippetFolderInput] = useState('');
   const [answers, setAnswers] = useState<WizardAnswers>({});
 
   const currentStep = STEPS[currentStepIndex];
   const isComplete = currentStepIndex >= STEPS.length;
+  const selectedSnippetFolder = answers.snippetFolder ?? defaultSnippetFolder;
   const progress = useMemo(
     () => `${Math.min(currentStepIndex + 1, STEPS.length)} of ${STEPS.length}`,
     [currentStepIndex]
@@ -122,6 +173,29 @@ export default function App() {
 
   useInput((_input, key) => {
     if (isComplete || !currentStep) {
+      return;
+    }
+
+    if (currentStep.kind === 'folder') {
+      if (key.return) {
+        setAnswers((currentAnswers) => ({
+          ...currentAnswers,
+          snippetFolder: snippetFolderInput.trim() || currentStep.defaultValue,
+        }));
+        setCurrentStepIndex((index) => index + 1);
+        setSnippetFolderInput('');
+        return;
+      }
+
+      if (key.backspace || key.delete) {
+        setSnippetFolderInput((value) => value.slice(0, -1));
+        return;
+      }
+
+      if (_input.length > 0 && !key.ctrl && !key.meta) {
+        setSnippetFolderInput((value) => `${value}${_input}`);
+      }
+
       return;
     }
 
@@ -156,6 +230,7 @@ export default function App() {
         <Text color="green">Wizard complete.</Text>
         <AnswerSummary answers={answers} />
         <Box marginTop={1} flexDirection="column">
+          <Text>Download/install flow will use: {selectedSnippetFolder}</Text>
           <Text>No backend action was run.</Text>
           <Text color="gray">Press Ctrl+C to exit.</Text>
         </Box>
@@ -173,18 +248,29 @@ export default function App() {
         <Text>{currentStep.prompt}</Text>
       </Box>
 
-      <Box flexDirection="column" marginTop={1}>
-        {currentStep.options.map((option, index) => (
-          <WizardOptionRow
-            key={option.label}
-            option={option}
-            isSelected={index === selectedOptionIndex}
-          />
-        ))}
-      </Box>
+      {currentStep.kind === 'folder' ? (
+        <FolderPrompt
+          value={snippetFolderInput}
+          defaultValue={currentStep.defaultValue}
+        />
+      ) : (
+        <Box flexDirection="column" marginTop={1}>
+          {currentStep.options.map((option, index) => (
+            <WizardOptionRow
+              key={option.label}
+              option={option}
+              isSelected={index === selectedOptionIndex}
+            />
+          ))}
+        </Box>
+      )}
 
       <Box marginTop={1}>
-        <Text color="gray">Use Up/Down to choose, Enter to continue.</Text>
+        <Text color="gray">
+          {currentStep.kind === 'folder'
+            ? 'Type a folder path, Backspace to edit, Enter to continue.'
+            : 'Use Up/Down to choose, Enter to continue.'}
+        </Text>
       </Box>
     </Box>
   );

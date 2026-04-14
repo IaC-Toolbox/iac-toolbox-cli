@@ -16,9 +16,10 @@ The phase-1 CLI replaces the old hello-world app with a guided Ink wizard that w
 1. Welcome
 2. Install Ansible
 3. Install Terraform
-4. Bootstrap repository notice for `IaC-Toolbox/iac-toolbox-raspberrypi`
-5. Playbook overview
-6. Individual playbook steps for:
+4. Choose where Raspberry Pi snippets should be downloaded, defaulting to the current working directory
+5. Bootstrap repository notice for `IaC-Toolbox/iac-toolbox-raspberrypi`
+6. Playbook overview
+7. Individual playbook steps for:
    - `base/setup`
    - `docker`
    - `vault`
@@ -28,7 +29,7 @@ The phase-1 CLI replaces the old hello-world app with a guided Ink wizard that w
    - `loki`
    - `openclaw`
    - `github runner`
-7. Summary
+8. Summary
 
 The wizard is UI-only in this phase. It shows mocked running states and per-step status markers, but it does not execute real install commands, clone repositories, collect API keys, or write environment files.
 
