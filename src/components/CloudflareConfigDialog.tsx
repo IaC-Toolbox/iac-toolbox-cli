@@ -22,10 +22,8 @@ export default function CloudflareConfigDialog({
   onComplete,
 }: CloudflareConfigDialogProps) {
   const [step, setStep] = useState<'main' | 'auth' | 'complete'>('main');
-  const [mainChoice, setMainChoice] = useState<string>('');
 
   const handleMainSelect = (value: string) => {
-    setMainChoice(value);
     if (value === 'yes') {
       setStep('auth');
     } else {

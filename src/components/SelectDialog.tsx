@@ -4,6 +4,7 @@ import { useState } from 'react';
 export interface SelectOption {
   value: string;
   label: string;
+  disabled?: boolean;
 }
 
 interface SelectDialogProps {
@@ -22,16 +23,26 @@ export default function SelectDialog({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [hasSelected, setHasSelected] = useState(false);
 
-  useInput((input, key) => {
+  useInput((_input, key) => {
     if (hasSelected) return;
 
     if (key.upArrow) {
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : options.length - 1));
+      let newIndex = selectedIndex;
+      do {
+        newIndex = newIndex > 0 ? newIndex - 1 : options.length - 1;
+      } while (options[newIndex].disabled && newIndex !== selectedIndex);
+      setSelectedIndex(newIndex);
     } else if (key.downArrow) {
-      setSelectedIndex((prev) => (prev < options.length - 1 ? prev + 1 : 0));
+      let newIndex = selectedIndex;
+      do {
+        newIndex = newIndex < options.length - 1 ? newIndex + 1 : 0;
+      } while (options[newIndex].disabled && newIndex !== selectedIndex);
+      setSelectedIndex(newIndex);
     } else if (key.return) {
-      setHasSelected(true);
-      onSelect(options[selectedIndex].value);
+      if (!options[selectedIndex].disabled) {
+        setHasSelected(true);
+        onSelect(options[selectedIndex].value);
+      }
     }
   });
 
@@ -39,7 +50,7 @@ export default function SelectDialog({
     <Box flexDirection="column">
       <Text>◆  {title}</Text>
       {options.map((option, index) => (
-        <Text key={option.value}>
+        <Text key={option.value} dimColor={option.disabled}>
           │  {selectedIndex === index ? '●' : '○'} {option.label}
         </Text>
       ))}
