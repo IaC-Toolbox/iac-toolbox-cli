@@ -2,8 +2,10 @@ import { Box, Text } from 'ink';
 import { useState } from 'react';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
 import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
+import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
 import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
+import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
 
 export default function App() {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
@@ -11,6 +13,9 @@ export default function App() {
   );
   const [pagerDutyConfig, setPagerDutyConfig] =
     useState<PagerDutyConfig | null>(null);
+  const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
+    null
+  );
 
   const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
     setPrerequisites(status);
@@ -18,6 +23,10 @@ export default function App() {
 
   const handlePagerDutyComplete = (config: PagerDutyConfig) => {
     setPagerDutyConfig(config);
+  };
+
+  const handleGitHubComplete = (config: GitHubActionsConfig) => {
+    setGithubConfig(config);
   };
 
   // Show prerequisite prompt
@@ -28,6 +37,11 @@ export default function App() {
   // Show PagerDuty configuration
   if (!pagerDutyConfig) {
     return <PagerDutyConfigDialog onComplete={handlePagerDutyComplete} />;
+  }
+
+  // Show GitHub Actions configuration
+  if (!githubConfig) {
+    return <GitHubActionsConfigDialog onComplete={handleGitHubComplete} />;
   }
 
   // Show completion message
@@ -50,6 +64,9 @@ export default function App() {
       </Text>
       <Text>
         PagerDuty: {pagerDutyConfig.enabled ? 'Configured' : 'Skipped'}
+      </Text>
+      <Text>
+        GitHub Actions: {githubConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
     </Box>
   );
