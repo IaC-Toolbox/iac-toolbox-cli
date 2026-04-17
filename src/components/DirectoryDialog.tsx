@@ -5,7 +5,7 @@ import fs from 'fs';
 import { useState, useEffect } from 'react';
 
 interface Props {
-  onSelect: (directory: string) => void;
+  onSelect: (directory: string, useExisting: boolean) => void;
 }
 
 interface DirectoryOption {
@@ -59,7 +59,7 @@ export default function DirectoryDialog({ onSelect }: Props) {
         }
       }
 
-      onSelect(resolvedPath);
+      onSelect(resolvedPath, false);
     };
 
     return (
@@ -79,9 +79,9 @@ export default function DirectoryDialog({ onSelect }: Props) {
       { label: 'No, override existing files', value: 'override' },
     ];
 
-    const handleSelect = () => {
-      // Both options proceed with the selected directory
-      onSelect(selectedDir);
+    const handleSelect = (item: DirectoryOption) => {
+      const shouldUseExisting = item.value === 'use-existing';
+      onSelect(selectedDir, shouldUseExisting);
     };
 
     return (
