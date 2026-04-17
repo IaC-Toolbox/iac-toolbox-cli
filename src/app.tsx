@@ -71,10 +71,20 @@ export default function App() {
 
   // 3. Scripts destination directory
   if (!directory) {
-    return <DirectoryDialog onSelect={setDirectory} />;
+    return (
+      <DirectoryDialog
+        onSelect={(dir, useExisting) => {
+          setDirectory(dir);
+          // If using existing files, skip download
+          if (useExisting) {
+            setDownloaded(true);
+          }
+        }}
+      />
+    );
   }
 
-  // 4. Download scripts
+  // 4. Download scripts (skip if using existing)
   if (!downloaded) {
     return (
       <DownloadDialog
