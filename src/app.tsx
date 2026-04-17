@@ -4,10 +4,12 @@ import PrerequisitePrompt from './components/PrerequisitePrompt.js';
 import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
 import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
 import VaultConfigDialog from './components/VaultConfigDialog.js';
+import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
 import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
 import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
 import type { VaultConfig } from './components/VaultConfigDialog.js';
+import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
 
 export default function App() {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
@@ -19,6 +21,9 @@ export default function App() {
     null
   );
   const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
+  const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(
+    null
+  );
 
   const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
     setPrerequisites(status);
@@ -34,6 +39,10 @@ export default function App() {
 
   const handleVaultComplete = (config: VaultConfig) => {
     setVaultConfig(config);
+  };
+
+  const handleGrafanaComplete = (config: GrafanaConfig) => {
+    setGrafanaConfig(config);
   };
 
   // Show prerequisite prompt
@@ -54,6 +63,11 @@ export default function App() {
   // Show Vault configuration
   if (!vaultConfig) {
     return <VaultConfigDialog onComplete={handleVaultComplete} />;
+  }
+
+  // Show Grafana configuration
+  if (!grafanaConfig) {
+    return <GrafanaConfigDialog onComplete={handleGrafanaComplete} />;
   }
 
   // Show completion message
@@ -81,6 +95,7 @@ export default function App() {
         GitHub Actions: {githubConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
       <Text>Vault: {vaultConfig.enabled ? 'Configured' : 'Skipped'}</Text>
+      <Text>Grafana: {grafanaConfig.enabled ? 'Configured' : 'Skipped'}</Text>
     </Box>
   );
 }
