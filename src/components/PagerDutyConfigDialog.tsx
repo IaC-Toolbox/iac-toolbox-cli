@@ -91,7 +91,9 @@ export default function PagerDutyConfigDialog({
           <Text dimColor>(Current: {displayToken} - press Enter to keep)</Text>
         </Box>
         <Box paddingLeft={3}>
-          <Text dimColor>(Get from: PagerDuty &gt; Integrations &gt; API Access Keys)</Text>
+          <Text dimColor>
+            (Get from: PagerDuty &gt; Integrations &gt; API Access Keys)
+          </Text>
         </Box>
         <Box paddingLeft={3} marginTop={1}>
           <TextInput

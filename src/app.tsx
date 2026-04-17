@@ -9,9 +9,8 @@ export default function App() {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
     null
   );
-  const [pagerDutyConfig, setPagerDutyConfig] = useState<PagerDutyConfig | null>(
-    null
-  );
+  const [pagerDutyConfig, setPagerDutyConfig] =
+    useState<PagerDutyConfig | null>(null);
 
   const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
     setPrerequisites(status);
@@ -50,8 +49,7 @@ export default function App() {
           : 'Skipped'}
       </Text>
       <Text>
-        PagerDuty:{' '}
-        {pagerDutyConfig.enabled ? 'Configured' : 'Skipped'}
+        PagerDuty: {pagerDutyConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
     </Box>
   );
