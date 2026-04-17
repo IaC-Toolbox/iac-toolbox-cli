@@ -3,9 +3,11 @@ import { useState } from 'react';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
 import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
 import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
+import VaultConfigDialog from './components/VaultConfigDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
 import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
 import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
+import type { VaultConfig } from './components/VaultConfigDialog.js';
 
 export default function App() {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
@@ -16,6 +18,7 @@ export default function App() {
   const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
     null
   );
+  const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
 
   const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
     setPrerequisites(status);
@@ -27,6 +30,10 @@ export default function App() {
 
   const handleGitHubComplete = (config: GitHubActionsConfig) => {
     setGithubConfig(config);
+  };
+
+  const handleVaultComplete = (config: VaultConfig) => {
+    setVaultConfig(config);
   };
 
   // Show prerequisite prompt
@@ -42,6 +49,11 @@ export default function App() {
   // Show GitHub Actions configuration
   if (!githubConfig) {
     return <GitHubActionsConfigDialog onComplete={handleGitHubComplete} />;
+  }
+
+  // Show Vault configuration
+  if (!vaultConfig) {
+    return <VaultConfigDialog onComplete={handleVaultComplete} />;
   }
 
   // Show completion message
@@ -68,6 +80,7 @@ export default function App() {
       <Text>
         GitHub Actions: {githubConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
+      <Text>Vault: {vaultConfig.enabled ? 'Configured' : 'Skipped'}</Text>
     </Box>
   );
 }
