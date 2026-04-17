@@ -7,12 +7,15 @@ settings:
 importers:
   .:
     dependencies:
+      commander:
+        specifier: ^14.0.3
+        version: 14.0.3
       ink:
         specifier: ^5.1.0
         version: 5.2.1(@types/react@18.3.28)(react@18.3.1)
-      ink-spinner:
-        specifier: ^5.0.0
-        version: 5.0.0(ink@5.2.1(@types/react@18.3.28)(react@18.3.1))(react@18.3.1)
+      ink-text-input:
+        specifier: ^6.0.0
+        version: 6.0.0(ink@5.2.1(@types/react@18.3.28)(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -711,13 +714,6 @@ packages:
       }
     engines: { node: ^12.20.0 || ^14.13.1 || >=16.0.0 }
 
-  cli-spinners@2.9.2:
-    resolution:
-      {
-        integrity: sha512-ywqV+5MmyL4E7ybXgKys4DugZbX0FC6LnwrhjuykIjnK9k8OQacQ7axGKnjDXWNhns0xot3bZI5h55H8yo9cJg==,
-      }
-    engines: { node: '>=6' }
-
   cli-truncate@4.0.0:
     resolution:
       {
@@ -744,6 +740,13 @@ packages:
       {
         integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==,
       }
+
+  commander@14.0.3:
+    resolution:
+      {
+        integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==,
+      }
+    engines: { node: '>=20' }
 
   concat-map@0.0.1:
     resolution:
@@ -1355,15 +1358,15 @@ packages:
         integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==,
       }
 
-  ink-spinner@5.0.0:
+  ink-text-input@6.0.0:
     resolution:
       {
-        integrity: sha512-EYEasbEjkqLGyPOUc8hBJZNuC5GvXGMLu0w5gdTNskPc7Izc5vO3tdQEYnzvshucyGCBXc86ig0ujXPMWaQCdA==,
+        integrity: sha512-Fw64n7Yha5deb1rHY137zHTAbSTNelUKuB5Kkk2HACXEtwIHBCf9OH2tP/LQ9fRYTl1F0dZgbW0zPnZk6FA9Lw==,
       }
-    engines: { node: '>=14.16' }
+    engines: { node: '>=18' }
     peerDependencies:
-      ink: '>=4.0.0'
-      react: '>=18.0.0'
+      ink: '>=5'
+      react: '>=18'
 
   ink@5.2.1:
     resolution:
@@ -2823,8 +2826,6 @@ snapshots:
     dependencies:
       restore-cursor: 4.0.0
 
-  cli-spinners@2.9.2: {}
-
   cli-truncate@4.0.0:
     dependencies:
       slice-ansi: 5.0.0
@@ -2839,6 +2840,8 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  commander@14.0.3: {}
 
   concat-map@0.0.1: {}
 
@@ -3329,11 +3332,12 @@ snapshots:
 
   inherits@2.0.4: {}
 
-  ink-spinner@5.0.0(ink@5.2.1(@types/react@18.3.28)(react@18.3.1))(react@18.3.1):
+  ink-text-input@6.0.0(ink@5.2.1(@types/react@18.3.28)(react@18.3.1))(react@18.3.1):
     dependencies:
-      cli-spinners: 2.9.2
+      chalk: 5.6.2
       ink: 5.2.1(@types/react@18.3.28)(react@18.3.1)
       react: 18.3.1
+      type-fest: 4.41.0
 
   ink@5.2.1(@types/react@18.3.28)(react@18.3.1):
     dependencies:
