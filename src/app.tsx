@@ -1,15 +1,23 @@
 import { Box, Text } from 'ink';
 import { useState } from 'react';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
+import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
+import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
 
 export default function App() {
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
     null
   );
+  const [pagerDutyConfig, setPagerDutyConfig] =
+    useState<PagerDutyConfig | null>(null);
 
   const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
     setPrerequisites(status);
+  };
+
+  const handlePagerDutyComplete = (config: PagerDutyConfig) => {
+    setPagerDutyConfig(config);
   };
 
   // Show prerequisite prompt
@@ -17,11 +25,16 @@ export default function App() {
     return <PrerequisitePrompt onComplete={handlePrerequisitesComplete} />;
   }
 
+  // Show PagerDuty configuration
+  if (!pagerDutyConfig) {
+    return <PagerDutyConfigDialog onComplete={handlePagerDutyComplete} />;
+  }
+
   // Show completion message
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold color="green">
-        Prerequisites configured!
+        Configuration complete!
       </Text>
       <Text>
         Ansible:{' '}
@@ -34,6 +47,9 @@ export default function App() {
         {prerequisites.terraform.installed
           ? `v${prerequisites.terraform.version}`
           : 'Skipped'}
+      </Text>
+      <Text>
+        PagerDuty: {pagerDutyConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
     </Box>
   );
