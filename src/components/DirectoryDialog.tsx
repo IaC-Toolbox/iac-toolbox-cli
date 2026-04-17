@@ -75,17 +75,13 @@ export default function DirectoryDialog({ onSelect }: Props) {
   // Step 2: Confirm override
   if (step === 'confirm-override' && selectedDir) {
     const options: DirectoryOption[] = [
-      { label: 'Yes, override existing files', value: 'override' },
-      { label: 'No, choose different directory', value: 'back' },
+      { label: 'Yes, use existing files', value: 'use-existing' },
+      { label: 'No, override existing files', value: 'override' },
     ];
 
-    const handleSelect = (item: DirectoryOption) => {
-      if (item.value === 'override') {
-        onSelect(selectedDir);
-      } else {
-        setStep('choose');
-        setSelectedDir(null);
-      }
+    const handleSelect = () => {
+      // Both options proceed with the selected directory
+      onSelect(selectedDir);
     };
 
     return (
@@ -97,7 +93,7 @@ export default function DirectoryDialog({ onSelect }: Props) {
           <Text dimColor>{selectedDir} contains existing files.</Text>
         </Box>
         <Box paddingLeft={3} marginTop={1}>
-          <Text bold>◆ Override existing files?</Text>
+          <Text bold>◆ Use existing files?</Text>
         </Box>
         <Box paddingLeft={3}>
           <SelectInput items={options} onSelect={handleSelect} />
