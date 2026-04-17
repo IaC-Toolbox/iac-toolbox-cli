@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DeviceTypeDialog from './components/DeviceTypeDialog.js';
 import ConnectionDialog from './components/ConnectionDialog.js';
 import DirectoryDialog from './components/DirectoryDialog.js';
@@ -47,6 +47,12 @@ export default function App() {
     null
   );
   const [summary, setSummary] = useState(false);
+  const [filesGenerated, setFilesGenerated] = useState(false);
+  const [filePaths, setFilePaths] = useState<{
+    configPath: string;
+    envPath: string;
+    inventoryPath: string;
+  } | null>(null);
 
   // 1. Device type selection
   if (!deviceType) {
@@ -146,7 +152,70 @@ export default function App() {
     );
   }
 
+  // 14. Generate config files
+  useEffect(() => {
+    if (summary && !filesGenerated && directory && connection) {
+      const generateFiles = async () => {
+        try {
+          const { generateConfigFiles } = await import(
+            './utils/configGenerator.js'
+          );
+          const wizardConfig = {
+            deviceType,
+            connection,
+            directory,
+            docker: dockerConfig!,
+            vault: vaultConfig!,
+            cloudflare: cloudflareConfig!,
+            grafana: grafanaConfig!,
+            prometheus: prometheusConfig!,
+            pagerDuty: pagerDutyConfig!,
+            githubRunner: githubConfig!,
+          };
+          const paths = await generateConfigFiles(wizardConfig);
+          setFilePaths(paths);
+          setFilesGenerated(true);
+        } catch (error) {
+          console.error('Failed to generate config files:', error);
+        }
+      };
+      generateFiles();
+    }
+  }, [
+    summary,
+    filesGenerated,
+    directory,
+    connection,
+    deviceType,
+    dockerConfig,
+    vaultConfig,
+    cloudflareConfig,
+    grafanaConfig,
+    prometheusConfig,
+    pagerDutyConfig,
+    githubConfig,
+  ]);
+
   // Final completion message
+  if (filesGenerated && filePaths) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Text bold color="green">
+          ◆ Configuration saved!
+        </Text>
+        <Text>│</Text>
+        <Text>│ Files created:</Text>
+        <Text>│ - {filePaths.configPath}</Text>
+        <Text>│ - {filePaths.envPath}</Text>
+        <Text>│ - {filePaths.inventoryPath}</Text>
+        <Text>│</Text>
+        <Text>│ To install later, run:</Text>
+        <Text>│ cd {directory} && ./scripts/install.sh</Text>
+        <Text>└</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold color="green">
