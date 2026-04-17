@@ -7,6 +7,7 @@ import DownloadDialog from './components/DownloadDialog.js';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
 import DockerConfigDialog from './components/DockerConfigDialog.js';
 import VaultConfigDialog from './components/VaultConfigDialog.js';
+import CloudflareConfigDialog from './components/CloudflareConfigDialog.js';
 import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
 import PrometheusConfigDialog from './components/PrometheusConfigDialog.js';
 import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
@@ -14,6 +15,7 @@ import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js
 import ConfigSummaryDialog from './components/ConfigSummaryDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
 import type { VaultConfig } from './components/VaultConfigDialog.js';
+import type { CloudflareConfig } from './components/CloudflareConfigDialog.js';
 import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
 import type { PrometheusConfig } from './components/PrometheusConfigDialog.js';
 import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
@@ -32,6 +34,8 @@ export default function App() {
     null
   );
   const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
+  const [cloudflareConfig, setCloudflareConfig] =
+    useState<CloudflareConfig | null>(null);
   const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(
     null
   );
@@ -93,31 +97,37 @@ export default function App() {
     return <VaultConfigDialog onComplete={setVaultConfig} />;
   }
 
-  // 8. Grafana
+  // 8. Cloudflare Tunnel
+  if (!cloudflareConfig) {
+    return <CloudflareConfigDialog onComplete={setCloudflareConfig} />;
+  }
+
+  // 9. Grafana
   if (!grafanaConfig) {
     return <GrafanaConfigDialog onComplete={setGrafanaConfig} />;
   }
 
-  // 9. Prometheus
+  // 10. Prometheus
   if (!prometheusConfig) {
     return <PrometheusConfigDialog onComplete={setPrometheusConfig} />;
   }
 
-  // 10. PagerDuty
+  // 11. PagerDuty
   if (!pagerDutyConfig) {
     return <PagerDutyConfigDialog onComplete={setPagerDutyConfig} />;
   }
 
-  // 11. GitHub Actions Runner
+  // 12. GitHub Actions Runner
   if (!githubConfig) {
     return <GitHubActionsConfigDialog onComplete={setGithubConfig} />;
   }
 
-  // 12. Configuration Summary
+  // 13. Configuration Summary
   if (!summary) {
     const services: ServiceSummary = {
       Docker: { enabled: dockerConfig.enabled },
       Vault: { enabled: vaultConfig.enabled },
+      'Cloudflare Tunnel': { enabled: cloudflareConfig.enabled },
       Grafana: { enabled: grafanaConfig.enabled },
       Prometheus: { enabled: prometheusConfig.enabled },
       PagerDuty: { enabled: pagerDutyConfig.enabled },
