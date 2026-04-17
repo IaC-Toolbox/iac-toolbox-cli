@@ -12,7 +12,7 @@ interface DirectoryOption {
 }
 
 const options: DirectoryOption[] = [
-  { label: 'Yes', value: '/infrastructure' },
+  { label: 'Yes', value: path.join(process.cwd(), 'infrastructure') },
   { label: 'No', value: process.cwd() },
 ];
 
