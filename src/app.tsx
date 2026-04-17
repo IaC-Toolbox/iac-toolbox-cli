@@ -1,25 +1,34 @@
 import { Box, Text } from 'ink';
 import { useState } from 'react';
+import DeviceTypeDialog from './components/DeviceTypeDialog.js';
+import ConnectionDialog from './components/ConnectionDialog.js';
+import DirectoryDialog from './components/DirectoryDialog.js';
+import DownloadDialog from './components/DownloadDialog.js';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
-import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
-import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
+import DockerConfigDialog from './components/DockerConfigDialog.js';
 import VaultConfigDialog from './components/VaultConfigDialog.js';
 import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
 import PrometheusConfigDialog from './components/PrometheusConfigDialog.js';
+import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
+import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
+import ConfigSummaryDialog from './components/ConfigSummaryDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
-import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
-import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
 import type { VaultConfig } from './components/VaultConfigDialog.js';
 import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
 import type { PrometheusConfig } from './components/PrometheusConfigDialog.js';
+import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
+import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
+import type { ServiceSummary } from './components/ConfigSummaryDialog.js';
 
 export default function App() {
+  const [deviceType, setDeviceType] = useState<string | null>(null);
+  const [connection, setConnection] = useState<any>(null);
+  const [directory, setDirectory] = useState<string | null>(null);
+  const [downloaded, setDownloaded] = useState(false);
   const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
     null
   );
-  const [pagerDutyConfig, setPagerDutyConfig] =
-    useState<PagerDutyConfig | null>(null);
-  const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
+  const [dockerConfig, setDockerConfig] = useState<{ enabled: boolean } | null>(
     null
   );
   const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
@@ -28,89 +37,103 @@ export default function App() {
   );
   const [prometheusConfig, setPrometheusConfig] =
     useState<PrometheusConfig | null>(null);
+  const [pagerDutyConfig, setPagerDutyConfig] =
+    useState<PagerDutyConfig | null>(null);
+  const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
+    null
+  );
+  const [summary, setSummary] = useState(false);
 
-  const handlePrerequisitesComplete = (status: PrerequisiteStatus) => {
-    setPrerequisites(status);
-  };
+  // 1. Device type selection
+  if (!deviceType) {
+    return <DeviceTypeDialog onSelect={setDeviceType} />;
+  }
 
-  const handlePagerDutyComplete = (config: PagerDutyConfig) => {
-    setPagerDutyConfig(config);
-  };
+  // 2. Connection details
+  if (!connection) {
+    return (
+      <ConnectionDialog mode={deviceType === 'remote' ? 'remote' : 'local'} onComplete={setConnection} />
+    );
+  }
 
-  const handleGitHubComplete = (config: GitHubActionsConfig) => {
-    setGithubConfig(config);
-  };
+  // 3. Scripts destination directory
+  if (!directory) {
+    return <DirectoryDialog onSelect={setDirectory} />;
+  }
 
-  const handleVaultComplete = (config: VaultConfig) => {
-    setVaultConfig(config);
-  };
+  // 4. Download scripts
+  if (!downloaded) {
+    return (
+      <DownloadDialog
+        destination={directory}
+        onComplete={() => setDownloaded(true)}
+      />
+    );
+  }
 
-  const handleGrafanaComplete = (config: GrafanaConfig) => {
-    setGrafanaConfig(config);
-  };
-
-  const handlePrometheusComplete = (config: PrometheusConfig) => {
-    setPrometheusConfig(config);
-  };
-
-  // Show prerequisite prompt
+  // 5. Prerequisites (Ansible/Terraform)
   if (!prerequisites) {
-    return <PrerequisitePrompt onComplete={handlePrerequisitesComplete} />;
+    return <PrerequisitePrompt onComplete={setPrerequisites} />;
   }
 
-  // Show PagerDuty configuration
-  if (!pagerDutyConfig) {
-    return <PagerDutyConfigDialog onComplete={handlePagerDutyComplete} />;
+  // 6. Docker
+  if (!dockerConfig) {
+    return <DockerConfigDialog onSelect={(enabled) => setDockerConfig({ enabled })} />;
   }
 
-  // Show GitHub Actions configuration
-  if (!githubConfig) {
-    return <GitHubActionsConfigDialog onComplete={handleGitHubComplete} />;
-  }
-
-  // Show Vault configuration
+  // 7. Vault
   if (!vaultConfig) {
-    return <VaultConfigDialog onComplete={handleVaultComplete} />;
+    return <VaultConfigDialog onComplete={setVaultConfig} />;
   }
 
-  // Show Grafana configuration
+  // 8. Grafana
   if (!grafanaConfig) {
-    return <GrafanaConfigDialog onComplete={handleGrafanaComplete} />;
+    return <GrafanaConfigDialog onComplete={setGrafanaConfig} />;
   }
 
-  // Show Prometheus configuration
+  // 9. Prometheus
   if (!prometheusConfig) {
-    return <PrometheusConfigDialog onComplete={handlePrometheusComplete} />;
+    return <PrometheusConfigDialog onComplete={setPrometheusConfig} />;
   }
 
-  // Show completion message
+  // 10. PagerDuty
+  if (!pagerDutyConfig) {
+    return <PagerDutyConfigDialog onComplete={setPagerDutyConfig} />;
+  }
+
+  // 11. GitHub Actions Runner
+  if (!githubConfig) {
+    return <GitHubActionsConfigDialog onComplete={setGithubConfig} />;
+  }
+
+  // 12. Configuration Summary
+  if (!summary) {
+    const services: ServiceSummary = {
+      Docker: { enabled: dockerConfig.enabled },
+      Vault: { enabled: vaultConfig.enabled },
+      Grafana: { enabled: grafanaConfig.enabled },
+      Prometheus: { enabled: prometheusConfig.enabled },
+      PagerDuty: { enabled: pagerDutyConfig.enabled },
+      'GitHub Actions': { enabled: githubConfig.enabled },
+    };
+
+    return (
+      <ConfigSummaryDialog
+        services={services}
+        onProceed={(action) => {
+          if (action === 'install' || action === 'save') {
+            setSummary(true);
+          }
+        }}
+      />
+    );
+  }
+
+  // Final completion message
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold color="green">
         Configuration complete!
-      </Text>
-      <Text>
-        Ansible:{' '}
-        {prerequisites.ansible.installed
-          ? `v${prerequisites.ansible.version}`
-          : 'Skipped'}
-      </Text>
-      <Text>
-        Terraform:{' '}
-        {prerequisites.terraform.installed
-          ? `v${prerequisites.terraform.version}`
-          : 'Skipped'}
-      </Text>
-      <Text>
-        PagerDuty: {pagerDutyConfig.enabled ? 'Configured' : 'Skipped'}
-      </Text>
-      <Text>
-        GitHub Actions: {githubConfig.enabled ? 'Configured' : 'Skipped'}
-      </Text>
-      <Text>Vault: {vaultConfig.enabled ? 'Configured' : 'Skipped'}</Text>
-      <Text>Grafana: {grafanaConfig.enabled ? 'Configured' : 'Skipped'}</Text>
-      <Text>
-        Prometheus: {prometheusConfig.enabled ? 'Configured' : 'Skipped'}
       </Text>
     </Box>
   );
