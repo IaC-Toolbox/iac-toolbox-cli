@@ -1,0 +1,86 @@
+---
+# ============================================
+# Raspberry Pi Infrastructure Configuration
+# ============================================
+# This file contains all non-sensitive configuration.
+# Sensitive data (API keys, passwords) belongs in secrets.yml
+
+# Docker Configuration
+docker:
+  enabled: true
+
+# Cloudflare Tunnel Configuration
+cloudflare:
+  enabled: true
+  mode: "{{ lookup('env', 'CLOUDFLARE_MODE') | default('oauth', true) }}" # oauth (current login/cert.pem flow) or api (token-based flow)
+  user: '{{ ansible_user }}' # User running cloudflared service
+  account_id: "{{ lookup('env', 'CLOUDFLARE_ACCOUNT_ID') | default('', true) }}"
+  zone_id: "{{ lookup('env', 'CLOUDFLARE_ZONE_ID') | default('', true) }}"
+  tunnel_name: main-backend-tunnel # Name of the tunnel in Cloudflare
+  domains:
+    - hostname: api.iac-toolbox.com # Public domain
+      service_port: 80 # Local port to expose
+      service: http://localhost:80
+    - hostname: vault.iac-toolbox.com # Vault UI
+      service_port: 8200 # Vault port
+      service: http://localhost:8200
+    - hostname: grafana.iac-toolbox.com # Grafana UI
+      service_port: 3000 # Grafana port
+
+# GitHub Actions Runner Configuration
+github_runner:
+  enabled: true
+  repo_url: "{{ lookup('env', 'GITHUB_REPO_URL') }}"
+  token: "{{ lookup('env', 'GITHUB_RUNNER_TOKEN') }}"
+  version: "{{ lookup('env', 'RUNNER_VERSION') | default('2.315.0', true) }}"
+  labels: "{{ lookup('env', 'RUNNER_LABELS') | default('rpi,arm64,docker', true) }}"
+  work_dir: '/home/{{ ansible_user }}/actions-runner'
+
+# Vault Configuration
+vault:
+  enabled: true
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/vault'
+  port: 8200
+  enable_kv: true
+  enable_audit: true
+
+# Grafana Configuration
+grafana:
+  enabled: true
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/grafana'
+  port: 3000
+  admin_user: 'admin'
+  admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
+  vault_path: 'kv/observability/grafana'
+  domain: 'grafana.iac-toolbox.com'
+
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/observability'
+  port: 9090
+  scrape_interval: '15s'
+  retention: '15d' # Configurable: 7d, 15d, 30d, etc.
+
+# Node Exporter Configuration
+node_exporter:
+  version: 'latest'
+  port: 9100
+
+# Loki Log Aggregation Configuration
+loki:
+  enabled: true
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/loki'
+  port: 3100
+  retention_hours: 168 # 7 days (72=3d, 168=7d, 336=14d, 720=30d)
+
+# Grafana Alloy Log Collector Configuration
+alloy:
+  enabled: true
+  version: 'latest'
+  port: 12345
+  domain: 'alloy.iac-toolbox.com'
