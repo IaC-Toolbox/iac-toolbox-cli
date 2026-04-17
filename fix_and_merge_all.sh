@@ -1,3 +1,10 @@
+#!/bin/bash
+set -e
+
+# PR #102 - Prometheus
+git checkout issue-84-configure-prometheus-metrics
+git rebase main || true
+cat > src/app.tsx << 'EOF'
 import { Box, Text } from 'ink';
 import { useState } from 'react';
 import PrerequisitePrompt from './components/PrerequisitePrompt.js';
@@ -115,3 +122,12 @@ export default function App() {
     </Box>
   );
 }
+EOF
+npm run format
+git add -A
+git rebase --continue
+git push --force-with-lease
+sleep 30
+gh pr merge 102 --repo IaC-Toolbox/iac-toolbox-cli --squash --delete-branch
+
+echo "PR #102 merged"
