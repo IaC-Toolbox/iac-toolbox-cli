@@ -52,7 +52,10 @@ export default function App() {
   // 2. Connection details
   if (!connection) {
     return (
-      <ConnectionDialog mode={deviceType === 'remote' ? 'remote' : 'local'} onComplete={setConnection} />
+      <ConnectionDialog
+        mode={deviceType === 'remote' ? 'remote' : 'local'}
+        onComplete={setConnection}
+      />
     );
   }
 
@@ -78,7 +81,11 @@ export default function App() {
 
   // 6. Docker
   if (!dockerConfig) {
-    return <DockerConfigDialog onSelect={(enabled) => setDockerConfig({ enabled })} />;
+    return (
+      <DockerConfigDialog
+        onSelect={(enabled) => setDockerConfig({ enabled })}
+      />
+    );
   }
 
   // 7. Vault
