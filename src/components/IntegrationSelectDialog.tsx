@@ -36,9 +36,8 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     id: 'grafana',
-    label: 'Grafana',
-    selectable: false,
-    hint: 'coming soon',
+    label: 'Grafana (metrics, logs and alerts)',
+    selectable: true,
   },
   {
     id: 'pagerduty',
