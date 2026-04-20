@@ -55,6 +55,35 @@ credentials
     );
   });
 
+const cloudflare = program
+  .command('cloudflare')
+  .description('Manage Cloudflare Tunnel integration');
+
+cloudflare
+  .command('install')
+  .description('Install or reinstall Cloudflare Tunnel')
+  .action(() => {
+    const { spawnSync } = require('child_process');
+    const { loadCredentials } = require('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = { ...process.env, CLOUDFLARE_API_TOKEN: creds.cloudflare_api_token || '' };
+    const result = spawnSync('bash', ['infrastructure/scripts/install.sh', '--cloudflared', '--local'], {
+      env, stdio: 'inherit',
+    });
+    process.exit(result.status ?? 1);
+  });
+
+cloudflare
+  .command('uninstall')
+  .description('Remove Cloudflare Tunnel from this device')
+  .action(() => {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('bash', ['infrastructure/scripts/uninstall-cloudflare.sh', '--local'], {
+      stdio: 'inherit',
+    });
+    process.exit(result.status ?? 1);
+  });
+
 program
   .command('uninstall')
   .description('Remove the previously installed infra')

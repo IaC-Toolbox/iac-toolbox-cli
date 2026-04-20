@@ -7,6 +7,8 @@ import DownloadDialog from './components/DownloadDialog.js';
 import IntegrationSelectDialog from './components/IntegrationSelectDialog.js';
 import GitHubBuildWorkflowDialog from './components/GitHubBuildWorkflowDialog.js';
 import type { GitHubBuildWorkflowConfig } from './components/GitHubBuildWorkflowDialog.js';
+import CloudflareConfigDialog from './components/CloudflareConfigDialog.js';
+import type { CloudflareConfig } from './components/CloudflareConfigDialog.js';
 import WizardSummaryDialog from './components/WizardSummaryDialog.js';
 import InstallPromptDialog from './components/InstallPromptDialog.js';
 import InstallRunnerDialog from './components/InstallRunnerDialog.js';
@@ -35,6 +37,7 @@ export default function App({ profile = 'default' }: AppProps) {
   // Step 5: Per-module configuration (new)
   const [githubBuildWorkflowConfig, setGithubBuildWorkflowConfig] =
     useState<GitHubBuildWorkflowConfig | null>(null);
+  const [cloudflareConfig, setCloudflareConfig] = useState<CloudflareConfig | null>(null);
   const [moduleConfigComplete, setModuleConfigComplete] = useState(false);
 
   // Step 6: Summary + write
@@ -65,12 +68,14 @@ export default function App({ profile = 'default' }: AppProps) {
 
     const needsGithubBuild =
       selectedIntegrations.includes('github_build_workflow');
+    const needsCloudflare = selectedIntegrations.includes('cloudflare');
 
     if (needsGithubBuild && githubBuildWorkflowConfig === null) return;
+    if (needsCloudflare && cloudflareConfig === null) return;
 
     // All selected modules are configured
     setModuleConfigComplete(true);
-  }, [selectedIntegrations, githubBuildWorkflowConfig]);
+  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig]);
 
   // Write files on confirm
   useEffect(() => {
@@ -84,15 +89,20 @@ export default function App({ profile = 'default' }: AppProps) {
         const configPath = await writeIacToolboxYaml(directory, {
           selectedIntegrations,
           githubBuildWorkflow: githubBuildWorkflowConfig ?? undefined,
+          cloudflare: cloudflareConfig ?? undefined,
         });
         setWrittenConfigPath(configPath);
 
         // Write credentials
+        const creds: Record<string, string> = {};
         if (githubBuildWorkflowConfig) {
-          saveCredentials(
-            { docker_hub_token: githubBuildWorkflowConfig.dockerHubToken },
-            profile,
-          );
+          creds.docker_hub_token = githubBuildWorkflowConfig.dockerHubToken;
+        }
+        if (cloudflareConfig) {
+          creds.cloudflare_api_token = cloudflareConfig.token;
+        }
+        if (Object.keys(creds).length > 0) {
+          saveCredentials(creds, profile);
         }
 
         setFilesWritten(true);
@@ -156,8 +166,7 @@ export default function App({ profile = 'default' }: AppProps) {
       <IntegrationSelectDialog
         onConfirm={(ids) => {
           setSelectedIntegrations(ids);
-          // If no integrations need config, mark complete immediately
-          if (!ids.includes('github_build_workflow')) {
+          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare')) {
             setModuleConfigComplete(true);
           }
         }}
@@ -167,7 +176,6 @@ export default function App({ profile = 'default' }: AppProps) {
 
   // 6. Per-module configuration for selected integrations
   if (!moduleConfigComplete) {
-    // GitHub Build Workflow config
     if (
       selectedIntegrations.includes('github_build_workflow') &&
       !githubBuildWorkflowConfig
@@ -177,6 +185,9 @@ export default function App({ profile = 'default' }: AppProps) {
           onComplete={setGithubBuildWorkflowConfig}
         />
       );
+    }
+    if (selectedIntegrations.includes('cloudflare') && !cloudflareConfig) {
+      return <CloudflareConfigDialog onComplete={setCloudflareConfig} />;
     }
   }
 

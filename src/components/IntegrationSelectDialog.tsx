@@ -26,9 +26,8 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     id: 'cloudflare',
-    label: 'Cloudflare Tunnel',
-    selectable: false,
-    hint: 'coming soon',
+    label: 'Cloudflare Tunnel (expose services via secure tunnel)',
+    selectable: true,
   },
   {
     id: 'vault',
