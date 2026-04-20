@@ -12,6 +12,7 @@ import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
 import PrometheusConfigDialog from './components/PrometheusConfigDialog.js';
 import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
 import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
+import CredentialPrompt from './components/CredentialPrompt.js';
 import ConfigSummaryDialog from './components/ConfigSummaryDialog.js';
 import type { PrerequisiteStatus } from './types/config.js';
 import type { VaultConfig } from './components/VaultConfigDialog.js';
@@ -21,8 +22,13 @@ import type { PrometheusConfig } from './components/PrometheusConfigDialog.js';
 import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
 import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
 import type { ServiceSummary } from './components/ConfigSummaryDialog.js';
+import type { CredentialProfile } from './utils/credentials.js';
 
-export default function App() {
+interface AppProps {
+  profile?: string;
+}
+
+export default function App({ profile = 'default' }: AppProps) {
   const [deviceType, setDeviceType] = useState<string | null>(null);
   const [connection, setConnection] = useState<any>(null);
   const [directory, setDirectory] = useState<string | null>(null);
@@ -44,6 +50,9 @@ export default function App() {
   const [pagerDutyConfig, setPagerDutyConfig] =
     useState<PagerDutyConfig | null>(null);
   const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
+    null
+  );
+  const [credentials, setCredentials] = useState<CredentialProfile | null>(
     null
   );
   const [summary, setSummary] = useState(false);
@@ -138,7 +147,17 @@ export default function App() {
     return <GitHubActionsConfigDialog onComplete={setGithubConfig} />;
   }
 
-  // 13. Configuration Summary
+  // 13. Credentials
+  if (credentials === null) {
+    return (
+      <CredentialPrompt
+        profile={profile}
+        onComplete={setCredentials}
+      />
+    );
+  }
+
+  // 14. Configuration Summary
   if (!summary) {
     const services: ServiceSummary = {
       Docker: { enabled: dockerConfig.enabled },
@@ -162,7 +181,7 @@ export default function App() {
     );
   }
 
-  // 14. Generate config files
+  // 15. Generate config files
   useEffect(() => {
     if (summary && !filesGenerated && directory && connection) {
       const generateFiles = async () => {
