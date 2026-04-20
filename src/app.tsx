@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DeviceTypeDialog from './components/DeviceTypeDialog.js';
 import ConnectionDialog from './components/ConnectionDialog.js';
 import DirectoryDialog from './components/DirectoryDialog.js';
@@ -8,8 +8,13 @@ import IntegrationSelectDialog from './components/IntegrationSelectDialog.js';
 import GitHubBuildWorkflowDialog from './components/GitHubBuildWorkflowDialog.js';
 import type { GitHubBuildWorkflowConfig } from './components/GitHubBuildWorkflowDialog.js';
 import WizardSummaryDialog from './components/WizardSummaryDialog.js';
+import InstallPromptDialog from './components/InstallPromptDialog.js';
+import InstallRunnerDialog from './components/InstallRunnerDialog.js';
+import InstallCompleteDialog from './components/InstallCompleteDialog.js';
+import ManualRunDialog from './components/ManualRunDialog.js';
 import { writeIacToolboxYaml } from './utils/iacToolboxConfig.js';
 import { saveCredentials } from './utils/credentials.js';
+import type { InstallResult } from './utils/installRunner.js';
 
 interface AppProps {
   profile?: string;
@@ -40,6 +45,19 @@ export default function App({ profile = 'default' }: AppProps) {
   const [writtenConfigPath, setWrittenConfigPath] = useState<string | null>(
     null,
   );
+
+  // Step 7: Install prompt + execution
+  const [installChoice, setInstallChoice] = useState<boolean | null>(null);
+  const [installRunning, setInstallRunning] = useState(false);
+  const [installResult, setInstallResult] = useState<InstallResult | null>(
+    null,
+  );
+
+  // Stable callback for install completion (must be at top level for hooks rules)
+  const handleInstallComplete = useCallback((result: InstallResult) => {
+    setInstallRunning(false);
+    setInstallResult(result);
+  }, []);
 
   // Mark module config complete when all selected integrations are configured
   useEffect(() => {
@@ -179,21 +197,46 @@ export default function App({ profile = 'default' }: AppProps) {
     );
   }
 
-  // 8. Files written — show completion
-  if (filesWritten && writtenConfigPath) {
+  // 8. Files written — show install prompt
+  if (filesWritten && writtenConfigPath && installChoice === null) {
     return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="green">
-          {'◆ Configuration saved!'}
-        </Text>
-        <Text>{'│'}</Text>
-        <Text>{'│ Files written:'}</Text>
-        <Text>{'│ - '}{writtenConfigPath}</Text>
-        <Text>{'│ - ~/.iac-toolbox/credentials'}</Text>
-        <Text>{'│'}</Text>
-        <Text>{'│ Docker will be installed automatically as a prerequisite.'}</Text>
-        <Text>{'└'}</Text>
-      </Box>
+      <InstallPromptDialog
+        onSelect={(install) => {
+          setInstallChoice(install);
+          if (install) {
+            setInstallRunning(true);
+          }
+        }}
+      />
+    );
+  }
+
+  // 9. User declined install — show manual run instructions
+  if (filesWritten && installChoice === false && directory) {
+    return <ManualRunDialog destination={directory} />;
+  }
+
+  // 10. Install running — show live output view
+  if (filesWritten && installRunning && directory && selectedIntegrations) {
+    return (
+      <InstallRunnerDialog
+        destination={directory}
+        profile={profile}
+        dockerHubUsername={githubBuildWorkflowConfig?.dockerHubUsername}
+        dockerImageName={githubBuildWorkflowConfig?.dockerImageName}
+        onComplete={handleInstallComplete}
+      />
+    );
+  }
+
+  // 11. Install complete — show result
+  if (filesWritten && installResult && directory && selectedIntegrations) {
+    return (
+      <InstallCompleteDialog
+        result={installResult}
+        selectedIntegrations={selectedIntegrations}
+        destination={directory}
+      />
     );
   }
 

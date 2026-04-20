@@ -1,0 +1,136 @@
+import { spawn } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import { loadCredentials } from './credentials.js';
+
+export interface InstallResult {
+  success: boolean;
+  exitCode: number | null;
+  lastErrorLine: string | null;
+}
+
+/**
+ * Required environment variables for install.sh in local mode.
+ */
+const REQUIRED_ENV_VARS = [
+  'RPI_HOST',
+  'RPI_USER',
+  'DOCKER_HUB_USERNAME',
+  'DOCKER_HUB_TOKEN',
+  'DOCKER_IMAGE_NAME',
+] as const;
+
+/**
+ * Build the environment object for the install script child process.
+ *
+ * Reads credentials from ~/.iac-toolbox/credentials and merges with
+ * auto-resolved values (RPI_HOST, RPI_USER). No .env file is written.
+ */
+export function buildInstallEnv(
+  profile: string = 'default',
+  dockerHubUsername?: string,
+  dockerImageName?: string,
+): Record<string, string> {
+  const creds = loadCredentials(profile);
+
+  return {
+    ...process.env as Record<string, string>,
+    RPI_HOST: 'localhost',
+    RPI_USER: os.userInfo().username,
+    DOCKER_HUB_USERNAME: dockerHubUsername || creds.docker_hub_username || '',
+    DOCKER_HUB_TOKEN: creds.docker_hub_token || '',
+    DOCKER_IMAGE_NAME: dockerImageName || creds.docker_image_name || '',
+  };
+}
+
+/**
+ * Resolve the path to install.sh from the destination directory.
+ */
+export function resolveInstallScript(destination: string): string {
+  return `${destination}/scripts/install.sh`;
+}
+
+/**
+ * Check that install.sh exists at the expected path.
+ */
+export function installScriptExists(destination: string): boolean {
+  return fs.existsSync(resolveInstallScript(destination));
+}
+
+/**
+ * Get the list of required environment variable names.
+ */
+export function getRequiredEnvVars(): readonly string[] {
+  return REQUIRED_ENV_VARS;
+}
+
+/**
+ * Get the manual run command string.
+ */
+export function getManualRunCommand(destination: string): string {
+  return `bash ${resolveInstallScript(destination)} --ansible-only --local`;
+}
+
+/**
+ * Run the install script with --ansible-only --local flags.
+ *
+ * Streams stdout/stderr directly to the terminal via stdio: 'inherit'.
+ * Returns a promise that resolves with the exit code and last error line.
+ */
+export function runInstallScript(
+  destination: string,
+  env: Record<string, string>,
+): Promise<InstallResult> {
+  return new Promise((resolve) => {
+    const scriptPath = resolveInstallScript(destination);
+
+    if (!fs.existsSync(scriptPath)) {
+      resolve({
+        success: false,
+        exitCode: 1,
+        lastErrorLine: `install.sh not found at ${scriptPath}`,
+      });
+      return;
+    }
+
+    let lastStderrLine = '';
+
+    const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
+      env,
+      stdio: ['inherit', 'inherit', 'pipe'],
+    });
+
+    // Capture stderr to get last error line on failure
+    child.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString();
+      // Also pipe stderr to terminal
+      process.stderr.write(text);
+      const lines = text.trim().split('\n');
+      const lastLine = lines[lines.length - 1];
+      if (lastLine) {
+        lastStderrLine = lastLine;
+      }
+    });
+
+    child.on('close', (code) => {
+      resolve({
+        success: code === 0,
+        exitCode: code,
+        lastErrorLine: code !== 0 ? lastStderrLine || null : null,
+      });
+    });
+
+    child.on('error', (err) => {
+      resolve({
+        success: false,
+        exitCode: 1,
+        lastErrorLine: err.message,
+      });
+    });
+
+    // Handle Ctrl+C — kill child process cleanly
+    process.on('SIGINT', () => {
+      child.kill('SIGINT');
+    });
+  });
+}
