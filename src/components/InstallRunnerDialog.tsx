@@ -45,6 +45,7 @@ export default function InstallRunnerDialog({
         success: false,
         exitCode: 1,
         lastErrorLine: `install.sh not found at ${destination}/scripts/install.sh`,
+        errorLines: [`install.sh not found at ${destination}/scripts/install.sh`],
       });
       return;
     }
