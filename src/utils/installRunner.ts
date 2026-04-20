@@ -30,12 +30,12 @@ const REQUIRED_ENV_VARS = [
 export function buildInstallEnv(
   profile: string = 'default',
   dockerHubUsername?: string,
-  dockerImageName?: string,
+  dockerImageName?: string
 ): Record<string, string> {
   const creds = loadCredentials(profile);
 
   return {
-    ...process.env as Record<string, string>,
+    ...(process.env as Record<string, string>),
     RPI_HOST: 'localhost',
     RPI_USER: os.userInfo().username,
     DOCKER_HUB_USERNAME: dockerHubUsername || creds.docker_hub_username || '',
@@ -80,7 +80,7 @@ export function getManualRunCommand(destination: string): string {
  */
 export function runInstallScript(
   destination: string,
-  env: Record<string, string>,
+  env: Record<string, string>
 ): Promise<InstallResult> {
   return new Promise((resolve) => {
     const scriptPath = resolveInstallScript(destination);
@@ -109,7 +109,10 @@ export function runInstallScript(
       const text = data.toString();
       // Also pipe stderr to terminal
       process.stderr.write(text);
-      const lines = text.trim().split('\n').filter(line => line.trim() !== '');
+      const lines = text
+        .trim()
+        .split('\n')
+        .filter((line) => line.trim() !== '');
 
       // Add new lines to the buffer
       stderrLines.push(...lines);

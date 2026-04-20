@@ -18,14 +18,28 @@ interface CloudflareConfigDialogProps {
   onComplete: (config: CloudflareConfig) => void;
 }
 
-type Step = 'token' | 'accountId' | 'zoneId' | 'tunnelName' | 'hostname' | 'servicePort';
+type Step =
+  | 'token'
+  | 'accountId'
+  | 'zoneId'
+  | 'tunnelName'
+  | 'hostname'
+  | 'servicePort';
 
-async function validateToken(token: string): Promise<{ valid: boolean; message: string }> {
+async function validateToken(
+  token: string
+): Promise<{ valid: boolean; message: string }> {
   try {
-    const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await fetch(
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
     if (res.ok) {
       const data = (await res.json()) as { success?: boolean };
       if (data.success) return { valid: true, message: 'Token validated' };
@@ -38,26 +52,45 @@ async function validateToken(token: string): Promise<{ valid: boolean; message: 
 
 async function validateZone(
   token: string,
-  zoneId: string,
+  zoneId: string
 ): Promise<{ valid: boolean; zoneName: string; message: string }> {
   try {
-    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${zoneId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
     if (res.ok) {
-      const data = (await res.json()) as { success?: boolean; result?: { name?: string } };
+      const data = (await res.json()) as {
+        success?: boolean;
+        result?: { name?: string };
+      };
       if (data.success && data.result?.name) {
-        return { valid: true, zoneName: data.result.name, message: `Zone verified: ${data.result.name}` };
+        return {
+          valid: true,
+          zoneName: data.result.name,
+          message: `Zone verified: ${data.result.name}`,
+        };
       }
     }
-    return { valid: false, zoneName: '', message: `Invalid zone (status ${res.status})` };
+    return {
+      valid: false,
+      zoneName: '',
+      message: `Invalid zone (status ${res.status})`,
+    };
   } catch {
     return { valid: false, zoneName: '', message: 'Connection failed' };
   }
 }
 
-export default function CloudflareConfigDialog({ onComplete }: CloudflareConfigDialogProps) {
+export default function CloudflareConfigDialog({
+  onComplete,
+}: CloudflareConfigDialogProps) {
   const [step, setStep] = useState<Step>('token');
   const [inputValue, setInputValue] = useState('');
   const [token, setToken] = useState('');
@@ -109,8 +142,10 @@ export default function CloudflareConfigDialog({ onComplete }: CloudflareConfigD
     };
 
     run();
-    return () => { cancelled = true; };
-  }, [validating]);
+    return () => {
+      cancelled = true;
+    };
+  }, [validating, step, inputValue, token]);
 
   const handleSubmit = (value: string) => {
     const trimmed = value.trim();
@@ -165,11 +200,25 @@ export default function CloudflareConfigDialog({ onComplete }: CloudflareConfigD
     <Box flexDirection="column" paddingY={1}>
       <Text bold>◆ {labels[step]}</Text>
       {step === 'tunnelName' && (
-        <Box paddingLeft={3}><Text dimColor>Default: {tunnelName}</Text></Box>
+        <Box paddingLeft={3}>
+          <Text dimColor>Default: {tunnelName}</Text>
+        </Box>
       )}
-      {validationMsg && <Box paddingLeft={3}><Text color="green">✔ {validationMsg}</Text></Box>}
-      {validationError && <Box paddingLeft={3}><Text color="red">✗ {validationError}</Text></Box>}
-      {validating && <Box paddingLeft={3}><Text dimColor>Validating...</Text></Box>}
+      {validationMsg && (
+        <Box paddingLeft={3}>
+          <Text color="green">✔ {validationMsg}</Text>
+        </Box>
+      )}
+      {validationError && (
+        <Box paddingLeft={3}>
+          <Text color="red">✗ {validationError}</Text>
+        </Box>
+      )}
+      {validating && (
+        <Box paddingLeft={3}>
+          <Text dimColor>Validating...</Text>
+        </Box>
+      )}
       <Box paddingLeft={3} marginTop={1}>
         <TextInput
           value={inputValue}

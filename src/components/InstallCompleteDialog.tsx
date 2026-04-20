@@ -27,9 +27,7 @@ export default function InstallCompleteDialog({
           <Text>{'│ ✓ GitHub Build Workflow ready'}</Text>
         )}
         <Text>{'│'}</Text>
-        <Text>
-          {'│ Run `iac-toolbox status` to verify your setup'}
-        </Text>
+        <Text>{'│ Run `iac-toolbox status` to verify your setup'}</Text>
         <Text>{'└'}</Text>
       </Box>
     );
