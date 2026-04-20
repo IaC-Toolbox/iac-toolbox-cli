@@ -1,44 +1,66 @@
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
-import SelectInput from 'ink-select-input';
 import { useState } from 'react';
 
-interface CloudflareConfig {
+export interface CloudflareConfig {
   enabled: boolean;
-  mode?: 'oauth' | 'api';
-  domain?: string;
-  token?: string;
-  accountId?: string;
-  zoneId?: string;
-  tunnelName?: string;
-  services?: ServiceMapping[];
-}
-
-interface ServiceMapping {
-  subdomain: string;
-  port: number;
-  hostname?: string;
+  mode: 'api';
+  token: string;
+  accountId: string;
+  zoneId: string;
+  zoneName: string;
+  tunnelName: string;
+  hostname: string;
+  servicePort: number;
 }
 
 interface CloudflareConfigDialogProps {
-  existingConfig?: Partial<CloudflareConfig>;
   onComplete: (config: CloudflareConfig) => void;
 }
 
-type Step =
-  | 'enable'
-  | 'mode'
-  | 'domain'
-  | 'token'
-  | 'accountId'
-  | 'zoneId'
-  | 'tunnelName'
-  | 'services'
-  | 'customService';
+type Step = 'token' | 'accountId' | 'zoneId' | 'tunnelName' | 'hostname' | 'servicePort';
 
-interface SelectOption {
-  label: string;
-  value: string;
+interface ValidationState {
+  validating: boolean;
+  error: string | null;
+  success: string | null;
+}
+
+async function validateToken(token: string): Promise<{ valid: boolean; message: string }> {
+  try {
+    const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { success?: boolean };
+      if (data.success) return { valid: true, message: 'Token validated' };
+    }
+    return { valid: false, message: `Cloudflare returned ${res.status}` };
+  } catch (e) {
+    return { valid: false, message: `Connection failed: ${e instanceof Error ? e.message : 'unknown'}` };
+  }
+}
+
+async function validateZone(
+  token: string,
+  zoneId: string,
+): Promise<{ valid: boolean; zoneName: string; message: string }> {
+  try {
+    const res = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { success?: boolean; result?: { name?: string } };
+      if (data.success && data.result?.name) {
+        return { valid: true, zoneName: data.result.name, message: `Zone verified: ${data.result.name}` };
+      }
+    }
+    return { valid: false, zoneName: '', message: `Cloudflare returned ${res.status}` };
+  } catch (e) {
+    return { valid: false, zoneName: '', message: `Connection failed: ${e instanceof Error ? e.message : 'unknown'}` };
+  }
 }
 
 export default function CloudflareConfigDialog({
