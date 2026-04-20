@@ -112,7 +112,13 @@ export function runInstallScript(
       }
     });
 
+    const sigintHandler = () => {
+      child.kill('SIGINT');
+    };
+    process.on('SIGINT', sigintHandler);
+
     child.on('close', (code) => {
+      process.removeListener('SIGINT', sigintHandler);
       resolve({
         success: code === 0,
         exitCode: code,
@@ -121,16 +127,12 @@ export function runInstallScript(
     });
 
     child.on('error', (err) => {
+      process.removeListener('SIGINT', sigintHandler);
       resolve({
         success: false,
         exitCode: 1,
         lastErrorLine: err.message,
       });
-    });
-
-    // Handle Ctrl+C — kill child process cleanly
-    process.on('SIGINT', () => {
-      child.kill('SIGINT');
     });
   });
 }
