@@ -31,9 +31,8 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     id: 'vault',
-    label: 'HashiCorp Vault',
-    selectable: false,
-    hint: 'coming soon',
+    label: 'HashiCorp Vault (secrets management)',
+    selectable: true,
   },
   {
     id: 'grafana',

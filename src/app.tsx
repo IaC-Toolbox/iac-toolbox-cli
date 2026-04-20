@@ -9,6 +9,8 @@ import GitHubBuildWorkflowDialog from './components/GitHubBuildWorkflowDialog.js
 import type { GitHubBuildWorkflowConfig } from './components/GitHubBuildWorkflowDialog.js';
 import CloudflareConfigDialog from './components/CloudflareConfigDialog.js';
 import type { CloudflareConfig } from './components/CloudflareConfigDialog.js';
+import VaultConfigDialog from './components/VaultConfigDialog.js';
+import type { VaultConfig } from './components/VaultConfigDialog.js';
 import WizardSummaryDialog from './components/WizardSummaryDialog.js';
 import InstallPromptDialog from './components/InstallPromptDialog.js';
 import InstallRunnerDialog from './components/InstallRunnerDialog.js';
@@ -38,6 +40,7 @@ export default function App({ profile = 'default' }: AppProps) {
   const [githubBuildWorkflowConfig, setGithubBuildWorkflowConfig] =
     useState<GitHubBuildWorkflowConfig | null>(null);
   const [cloudflareConfig, setCloudflareConfig] = useState<CloudflareConfig | null>(null);
+  const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
   const [moduleConfigComplete, setModuleConfigComplete] = useState(false);
 
   // Step 6: Summary + write
@@ -69,13 +72,15 @@ export default function App({ profile = 'default' }: AppProps) {
     const needsGithubBuild =
       selectedIntegrations.includes('github_build_workflow');
     const needsCloudflare = selectedIntegrations.includes('cloudflare');
+    const needsVault = selectedIntegrations.includes('vault');
 
     if (needsGithubBuild && githubBuildWorkflowConfig === null) return;
     if (needsCloudflare && cloudflareConfig === null) return;
+    if (needsVault && vaultConfig === null) return;
 
     // All selected modules are configured
     setModuleConfigComplete(true);
-  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig]);
+  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig, vaultConfig]);
 
   // Write files on confirm
   useEffect(() => {
@@ -90,6 +95,7 @@ export default function App({ profile = 'default' }: AppProps) {
           selectedIntegrations,
           githubBuildWorkflow: githubBuildWorkflowConfig ?? undefined,
           cloudflare: cloudflareConfig ?? undefined,
+          vault: vaultConfig ?? undefined,
         });
         setWrittenConfigPath(configPath);
 
@@ -166,7 +172,7 @@ export default function App({ profile = 'default' }: AppProps) {
       <IntegrationSelectDialog
         onConfirm={(ids) => {
           setSelectedIntegrations(ids);
-          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare')) {
+          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare') && !ids.includes('vault')) {
             setModuleConfigComplete(true);
           }
         }}
@@ -188,6 +194,9 @@ export default function App({ profile = 'default' }: AppProps) {
     }
     if (selectedIntegrations.includes('cloudflare') && !cloudflareConfig) {
       return <CloudflareConfigDialog onComplete={setCloudflareConfig} />;
+    }
+    if (selectedIntegrations.includes('vault') && !vaultConfig) {
+      return <VaultConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setVaultConfig} />;
     }
   }
 

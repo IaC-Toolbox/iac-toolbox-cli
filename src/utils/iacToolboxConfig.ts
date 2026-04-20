@@ -2,11 +2,13 @@ import fs from 'fs/promises';
 import path from 'path';
 import type { GitHubBuildWorkflowConfig } from '../components/GitHubBuildWorkflowDialog.js';
 import type { CloudflareConfig } from '../components/CloudflareConfigDialog.js';
+import type { VaultConfig } from '../components/VaultConfigDialog.js';
 
 interface IacToolboxYamlConfig {
   selectedIntegrations: string[];
   githubBuildWorkflow?: GitHubBuildWorkflowConfig;
   cloudflare?: CloudflareConfig;
+  vault?: VaultConfig;
 }
 
 /**
@@ -63,8 +65,23 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('  enabled: false # coming soon');
   }
   lines.push('');
-  lines.push('vault:');
-  lines.push('  enabled: false # coming soon');
+
+  // Vault
+  if (config.selectedIntegrations.includes('vault') && config.vault) {
+    const v = config.vault;
+    lines.push('vault:');
+    lines.push('  enabled: true');
+    lines.push(`  version: "${v.version}"`);
+    lines.push(`  port: ${v.port}`);
+    lines.push(`  enable_kv: ${v.enableKv}`);
+    lines.push(`  enable_audit: ${v.enableAudit}`);
+    if (v.domain) {
+      lines.push(`  domain: "${v.domain}"`);
+    }
+  } else {
+    lines.push('vault:');
+    lines.push('  enabled: false # coming soon');
+  }
   lines.push('');
   lines.push('grafana:');
   lines.push('  enabled: false # coming soon');
