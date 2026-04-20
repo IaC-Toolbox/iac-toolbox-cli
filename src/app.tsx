@@ -4,64 +4,94 @@ import DeviceTypeDialog from './components/DeviceTypeDialog.js';
 import ConnectionDialog from './components/ConnectionDialog.js';
 import DirectoryDialog from './components/DirectoryDialog.js';
 import DownloadDialog from './components/DownloadDialog.js';
-import PrerequisitePrompt from './components/PrerequisitePrompt.js';
-import DockerConfigDialog from './components/DockerConfigDialog.js';
-import VaultConfigDialog from './components/VaultConfigDialog.js';
-import CloudflareConfigDialog from './components/CloudflareConfigDialog.js';
-import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
-import PrometheusConfigDialog from './components/PrometheusConfigDialog.js';
-import PagerDutyConfigDialog from './components/PagerDutyConfigDialog.js';
-import GitHubActionsConfigDialog from './components/GitHubActionsConfigDialog.js';
-import CredentialPrompt from './components/CredentialPrompt.js';
-import ConfigSummaryDialog from './components/ConfigSummaryDialog.js';
-import type { PrerequisiteStatus } from './types/config.js';
-import type { VaultConfig } from './components/VaultConfigDialog.js';
-import type { CloudflareConfig } from './components/CloudflareConfigDialog.js';
-import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
-import type { PrometheusConfig } from './components/PrometheusConfigDialog.js';
-import type { PagerDutyConfig } from './components/PagerDutyConfigDialog.js';
-import type { GitHubActionsConfig } from './components/GitHubActionsConfigDialog.js';
-import type { ServiceSummary } from './components/ConfigSummaryDialog.js';
-import type { CredentialProfile } from './utils/credentials.js';
+import IntegrationSelectDialog from './components/IntegrationSelectDialog.js';
+import GitHubBuildWorkflowDialog from './components/GitHubBuildWorkflowDialog.js';
+import type { GitHubBuildWorkflowConfig } from './components/GitHubBuildWorkflowDialog.js';
+import WizardSummaryDialog from './components/WizardSummaryDialog.js';
+import { writeIacToolboxYaml } from './utils/iacToolboxConfig.js';
+import { saveCredentials } from './utils/credentials.js';
 
 interface AppProps {
   profile?: string;
 }
 
 export default function App({ profile = 'default' }: AppProps) {
+  // Steps 1-3: Device type, connection, directory, download (unchanged)
   const [deviceType, setDeviceType] = useState<string | null>(null);
   const [connection, setConnection] = useState<any>(null);
   const [directory, setDirectory] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
-  const [prerequisites, setPrerequisites] = useState<PrerequisiteStatus | null>(
-    null
+
+  // Step 4: Integration selection (new)
+  const [selectedIntegrations, setSelectedIntegrations] = useState<
+    string[] | null
+  >(null);
+
+  // Step 5: Per-module configuration (new)
+  const [githubBuildWorkflowConfig, setGithubBuildWorkflowConfig] =
+    useState<GitHubBuildWorkflowConfig | null>(null);
+  const [moduleConfigComplete, setModuleConfigComplete] = useState(false);
+
+  // Step 6: Summary + write
+  const [summaryAction, setSummaryAction] = useState<
+    'confirm' | 'cancel' | null
+  >(null);
+  const [filesWritten, setFilesWritten] = useState(false);
+  const [writtenConfigPath, setWrittenConfigPath] = useState<string | null>(
+    null,
   );
-  const [dockerConfig, setDockerConfig] = useState<{ enabled: boolean } | null>(
-    null
-  );
-  const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
-  const [cloudflareConfig, setCloudflareConfig] =
-    useState<CloudflareConfig | null>(null);
-  const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(
-    null
-  );
-  const [prometheusConfig, setPrometheusConfig] =
-    useState<PrometheusConfig | null>(null);
-  const [pagerDutyConfig, setPagerDutyConfig] =
-    useState<PagerDutyConfig | null>(null);
-  const [githubConfig, setGithubConfig] = useState<GitHubActionsConfig | null>(
-    null
-  );
-  const [credentials, setCredentials] = useState<CredentialProfile | null>(
-    null
-  );
-  const [summary, setSummary] = useState(false);
-  const [filesGenerated, setFilesGenerated] = useState(false);
-  const [filePaths, setFilePaths] = useState<{
-    configPath: string;
-    envPath: string;
-    inventoryPath: string;
-  } | null>(null);
+
+  // Mark module config complete when all selected integrations are configured
+  useEffect(() => {
+    if (selectedIntegrations === null) return;
+
+    const needsGithubBuild =
+      selectedIntegrations.includes('github_build_workflow');
+
+    if (needsGithubBuild && githubBuildWorkflowConfig === null) return;
+
+    // All selected modules are configured
+    setModuleConfigComplete(true);
+  }, [selectedIntegrations, githubBuildWorkflowConfig]);
+
+  // Write files on confirm
+  useEffect(() => {
+    if (summaryAction !== 'confirm') return;
+    if (filesWritten) return;
+    if (!directory || !selectedIntegrations) return;
+
+    const writeFiles = async () => {
+      try {
+        // Write iac-toolbox.yml
+        const configPath = await writeIacToolboxYaml(directory, {
+          selectedIntegrations,
+          githubBuildWorkflow: githubBuildWorkflowConfig ?? undefined,
+        });
+        setWrittenConfigPath(configPath);
+
+        // Write credentials
+        if (githubBuildWorkflowConfig) {
+          saveCredentials(
+            { docker_hub_token: githubBuildWorkflowConfig.dockerHubToken },
+            profile,
+          );
+        }
+
+        setFilesWritten(true);
+      } catch (error) {
+        console.error('Failed to write files:', error);
+      }
+    };
+
+    writeFiles();
+  }, [
+    summaryAction,
+    filesWritten,
+    directory,
+    selectedIntegrations,
+    githubBuildWorkflowConfig,
+    profile,
+  ]);
 
   // 1. Device type selection
   if (!deviceType) {
@@ -84,7 +114,6 @@ export default function App({ profile = 'default' }: AppProps) {
       <DirectoryDialog
         onSelect={(dir, useExisting) => {
           setDirectory(dir);
-          // If using existing files, skip download
           if (useExisting) {
             setDownloaded(true);
           }
@@ -103,153 +132,75 @@ export default function App({ profile = 'default' }: AppProps) {
     );
   }
 
-  // 5. Prerequisites (Ansible/Terraform)
-  if (!prerequisites) {
-    return <PrerequisitePrompt onComplete={setPrerequisites} />;
-  }
-
-  // 6. Docker
-  if (!dockerConfig) {
+  // 5. Select integrations (new multi-select)
+  if (selectedIntegrations === null) {
     return (
-      <DockerConfigDialog
-        onSelect={(enabled) => setDockerConfig({ enabled })}
-      />
-    );
-  }
-
-  // 7. Vault
-  if (!vaultConfig) {
-    return <VaultConfigDialog onComplete={setVaultConfig} />;
-  }
-
-  // 8. Cloudflare Tunnel
-  if (!cloudflareConfig) {
-    return <CloudflareConfigDialog onComplete={setCloudflareConfig} />;
-  }
-
-  // 9. Grafana
-  if (!grafanaConfig) {
-    return <GrafanaConfigDialog onComplete={setGrafanaConfig} />;
-  }
-
-  // 10. Prometheus
-  if (!prometheusConfig) {
-    return <PrometheusConfigDialog onComplete={setPrometheusConfig} />;
-  }
-
-  // 11. PagerDuty
-  if (!pagerDutyConfig) {
-    return <PagerDutyConfigDialog onComplete={setPagerDutyConfig} />;
-  }
-
-  // 12. GitHub Actions Runner
-  if (!githubConfig) {
-    return <GitHubActionsConfigDialog onComplete={setGithubConfig} />;
-  }
-
-  // 13. Credentials
-  if (credentials === null) {
-    return (
-      <CredentialPrompt
-        profile={profile}
-        onComplete={setCredentials}
-      />
-    );
-  }
-
-  // 14. Configuration Summary
-  if (!summary) {
-    const services: ServiceSummary = {
-      Docker: { enabled: dockerConfig.enabled },
-      Vault: { enabled: vaultConfig.enabled },
-      'Cloudflare Tunnel': { enabled: cloudflareConfig.enabled },
-      Grafana: { enabled: grafanaConfig.enabled },
-      Prometheus: { enabled: prometheusConfig.enabled },
-      PagerDuty: { enabled: pagerDutyConfig.enabled },
-      'GitHub Actions': { enabled: githubConfig.enabled },
-    };
-
-    return (
-      <ConfigSummaryDialog
-        services={services}
-        onProceed={(action) => {
-          if (action === 'install' || action === 'save') {
-            setSummary(true);
+      <IntegrationSelectDialog
+        onConfirm={(ids) => {
+          setSelectedIntegrations(ids);
+          // If no integrations need config, mark complete immediately
+          if (!ids.includes('github_build_workflow')) {
+            setModuleConfigComplete(true);
           }
         }}
       />
     );
   }
 
-  // 15. Generate config files
-  useEffect(() => {
-    if (summary && !filesGenerated && directory && connection) {
-      const generateFiles = async () => {
-        try {
-          const { generateConfigFiles } = await import(
-            './utils/configGenerator.js'
-          );
-          const wizardConfig = {
-            deviceType,
-            connection,
-            directory,
-            docker: dockerConfig!,
-            vault: vaultConfig!,
-            cloudflare: cloudflareConfig!,
-            grafana: grafanaConfig!,
-            prometheus: prometheusConfig!,
-            pagerDuty: pagerDutyConfig!,
-            githubRunner: githubConfig!,
-          };
-          const paths = await generateConfigFiles(wizardConfig);
-          setFilePaths(paths);
-          setFilesGenerated(true);
-        } catch (error) {
-          console.error('Failed to generate config files:', error);
-        }
-      };
-      generateFiles();
+  // 6. Per-module configuration for selected integrations
+  if (!moduleConfigComplete) {
+    // GitHub Build Workflow config
+    if (
+      selectedIntegrations.includes('github_build_workflow') &&
+      !githubBuildWorkflowConfig
+    ) {
+      return (
+        <GitHubBuildWorkflowDialog
+          onComplete={setGithubBuildWorkflowConfig}
+        />
+      );
     }
-  }, [
-    summary,
-    filesGenerated,
-    directory,
-    connection,
-    deviceType,
-    dockerConfig,
-    vaultConfig,
-    cloudflareConfig,
-    grafanaConfig,
-    prometheusConfig,
-    pagerDutyConfig,
-    githubConfig,
-  ]);
+  }
 
-  // Final completion message
-  if (filesGenerated && filePaths) {
+  // 7. Summary screen
+  if (summaryAction === null) {
+    const configFilePath = `${directory}/iac-toolbox.yml`;
+    return (
+      <WizardSummaryDialog
+        selectedIntegrations={selectedIntegrations}
+        configFilePath={configFilePath}
+        onConfirm={(action) => {
+          if (action === 'cancel') {
+            process.exit(0);
+          }
+          setSummaryAction(action);
+        }}
+      />
+    );
+  }
+
+  // 8. Files written — show completion
+  if (filesWritten && writtenConfigPath) {
     return (
       <Box flexDirection="column" padding={1}>
         <Text bold color="green">
-          ◆ Configuration saved!
+          {'◆ Configuration saved!'}
         </Text>
-        <Text>│</Text>
-        <Text>│ Files created:</Text>
-        <Text>│ - {filePaths.configPath}</Text>
-        <Text>│ - {filePaths.envPath}</Text>
-        <Text>│ - {filePaths.inventoryPath}</Text>
-        <Text>│</Text>
-        <Text>│ To install later, run:</Text>
-        <Text>│ cd {directory} && ./scripts/install.sh</Text>
-        <Text>└</Text>
+        <Text>{'│'}</Text>
+        <Text>{'│ Files written:'}</Text>
+        <Text>{'│ - '}{writtenConfigPath}</Text>
+        <Text>{'│ - ~/.iac-toolbox/credentials'}</Text>
+        <Text>{'│'}</Text>
+        <Text>{'│ Docker will be installed automatically as a prerequisite.'}</Text>
+        <Text>{'└'}</Text>
       </Box>
     );
   }
 
+  // Writing files in progress
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color="green">
-        Configuration complete!
-      </Text>
+      <Text>Writing configuration files...</Text>
     </Box>
   );
 }
