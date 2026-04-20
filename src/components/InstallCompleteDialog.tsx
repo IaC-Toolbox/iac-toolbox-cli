@@ -4,7 +4,6 @@ import type { InstallResult } from '../utils/installRunner.js';
 interface InstallCompleteDialogProps {
   result: InstallResult;
   selectedIntegrations: string[];
-  destination: string;
 }
 
 /**

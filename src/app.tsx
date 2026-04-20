@@ -308,7 +308,6 @@ export default function App({ profile = 'default' }: AppProps) {
       <InstallCompleteDialog
         result={installResult}
         selectedIntegrations={selectedIntegrations}
-        destination={directory}
       />
     );
   }
