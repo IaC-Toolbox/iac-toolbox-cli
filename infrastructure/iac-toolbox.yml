@@ -2,7 +2,7 @@
 # Safe to commit — no secrets stored here
 
 device:
-  profile: 'app-server'
+  profile: 'both'
 
 docker:
   enabled: true # always installed, not configurable
