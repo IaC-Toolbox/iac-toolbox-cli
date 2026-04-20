@@ -1,5 +1,6 @@
 import { Box, Text } from 'ink';
 import { useState, useEffect, useCallback } from 'react';
+import os from 'os';
 import DeviceProfileDialog from './components/DeviceProfileDialog.js';
 import type { DeviceProfile } from './components/DeviceProfileDialog.js';
 import { PROFILE_DEFAULTS } from './components/DeviceProfileDialog.js';
@@ -158,11 +159,19 @@ export default function App({ profile = 'default' }: AppProps) {
     return <DeviceTypeDialog onSelect={setDeviceType} />;
   }
 
-  // 2. Connection details
+  // 2. Connection details (remote only)
   if (!connection) {
+    // For local mode, auto-populate connection with current username
+    if (deviceType === 'local') {
+      setConnection({ username: os.userInfo().username });
+      // Return empty fragment to trigger re-render with connection set
+      return <></>;
+    }
+
+    // For remote mode, show connection dialog
     return (
       <ConnectionDialog
-        mode={deviceType === 'remote' ? 'remote' : 'local'}
+        mode="remote"
         onComplete={setConnection}
       />
     );
