@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { loadCredentials, type CredentialProfile } from './credentials.js';
@@ -27,85 +27,90 @@ export interface AnsibleRunOptions {
 }
 
 /**
- * Build the ansible-playbook command string, combining the non-sensitive
+ * Build the ansible-playbook argument array, combining the non-sensitive
  * config file with credentials from ~/.iac-toolbox/credentials.
  *
  * Non-sensitive values come from infrastructure/iac-toolbox.yml via @file.
  * Secrets come from the credentials file and are passed as individual
  * --extra-vars, so they take highest precedence.
+ *
+ * Returns an array of arguments suitable for spawnSync (no shell needed).
  */
-export function buildAnsibleCommand(options: AnsibleRunOptions): string {
+export function buildAnsibleArgs(options: AnsibleRunOptions): string[] {
   const { playbook, projectDir, profile = 'default', extraArgs = [] } = options;
 
   const configPath = path.join(projectDir, CONFIG_FILE);
   const creds = loadCredentials(profile);
 
-  const parts: string[] = ['ansible-playbook', playbook];
+  const args: string[] = [playbook];
 
   // Non-sensitive config from file (if it exists)
   if (fs.existsSync(configPath)) {
-    parts.push(`--extra-vars "@${configPath}"`);
+    args.push('--extra-vars', `@${configPath}`);
   }
 
   // Secrets from credentials file — passed last for highest precedence
   const secretVars = buildSecretVars(creds);
   if (secretVars) {
-    parts.push(`--extra-vars "${secretVars}"`);
+    args.push('--extra-vars', secretVars);
   }
 
   // Any additional arguments
-  parts.push(...extraArgs);
+  args.push(...extraArgs);
 
-  return parts.join(' ');
+  return args;
+}
+
+/**
+ * Build the full command string for display / dry-run purposes only.
+ */
+export function buildAnsibleCommand(options: AnsibleRunOptions): string {
+  const args = buildAnsibleArgs(options);
+  return ['ansible-playbook', ...args].join(' ');
 }
 
 /**
  * Convert a credential profile into a space-separated key=value string
  * suitable for Ansible --extra-vars.
+ *
+ * Because we use spawnSync with an argument array, these values are never
+ * interpreted by a shell — no escaping is needed.
  */
 function buildSecretVars(creds: CredentialProfile): string {
   return Object.entries(creds)
     .filter(([, value]) => value && value.trim() !== '')
-    .map(([key, value]) => `${key}=${escapeShellValue(value)}`)
+    .map(([key, value]) => `${key}=${value}`)
     .join(' ');
-}
-
-/**
- * Escape a value for safe inclusion in a shell-quoted string.
- * Wraps in single quotes and escapes embedded single quotes.
- */
-function escapeShellValue(value: string): string {
-  // If value contains spaces or special chars, wrap in single quotes
-  if (/[^a-zA-Z0-9_\-.:/]/.test(value)) {
-    return `'${value.replace(/'/g, "'\\''")}'`;
-  }
-  return value;
 }
 
 /**
  * Run an Ansible playbook with combined config + credentials.
  *
+ * Uses spawnSync with an argument array to avoid shell injection.
  * Throws if the playbook execution fails.
  */
 export function runAnsiblePlaybook(options: AnsibleRunOptions): string {
-  const command = buildAnsibleCommand(options);
-
   if (options.dryRun) {
-    return command;
+    return buildAnsibleCommand(options);
   }
 
-  try {
-    const output = execSync(command, {
-      cwd: options.projectDir,
-      stdio: 'inherit',
-      encoding: 'utf-8',
-    });
-    return output || '';
-  } catch (error) {
-    throw new Error(
-      `Ansible playbook failed: ${error instanceof Error ? error.message : 'unknown error'}`
-    );
+  const args = buildAnsibleArgs(options);
+
+  const result = spawnSync('ansible-playbook', args, {
+    cwd: options.projectDir,
+    stdio: 'inherit',
+    encoding: 'utf-8',
+  });
+
+  if (result.error) {
+    throw new Error(`Ansible playbook failed: ${result.error.message}`);
   }
+
+  if (result.status !== 0) {
+    throw new Error(`Ansible playbook failed with exit code ${result.status}`);
+  }
+
+  return result.stdout || '';
 }
 
 /**

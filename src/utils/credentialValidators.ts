@@ -13,6 +13,7 @@ async function validateDockerHubToken(token: string): Promise<ValidationResult> 
     // Use the repositories endpoint with the PAT as bearer token
     const repoRes = await fetch('https://hub.docker.com/v2/repositories/', {
       headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (repoRes.ok) {
@@ -38,6 +39,7 @@ async function validateGitHubPat(token: string): Promise<ValidationResult> {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {
@@ -69,6 +71,7 @@ async function validateCloudflareToken(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {
@@ -96,6 +99,7 @@ async function validateVaultToken(token: string): Promise<ValidationResult> {
     const vaultAddr = process.env['VAULT_ADDR'] || 'http://127.0.0.1:8200';
     const res = await fetch(`${vaultAddr}/v1/auth/token/lookup-self`, {
       headers: { 'X-Vault-Token': token },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {
@@ -120,6 +124,7 @@ async function validateGrafanaApiKey(key: string): Promise<ValidationResult> {
       process.env['GRAFANA_URL'] || 'http://127.0.0.1:3000';
     const res = await fetch(`${grafanaUrl}/api/org/`, {
       headers: { Authorization: `Bearer ${key}` },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {
@@ -149,6 +154,7 @@ async function validatePagerDutyKey(key: string): Promise<ValidationResult> {
         Authorization: `Token token=${key}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (res.ok) {

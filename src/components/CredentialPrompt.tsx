@@ -2,7 +2,7 @@ import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import Spinner from 'ink-spinner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CREDENTIAL_KEYS,
   type CredentialKey,
@@ -36,7 +36,7 @@ export default function CredentialPrompt({
   profile = 'default',
   onComplete,
 }: CredentialPromptProps) {
-  const existing = loadCredentials(profile);
+  const [existing] = useState<CredentialProfile>(() => loadCredentials(profile));
 
   const [phase, setPhase] = useState<PromptPhase>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,6 +44,20 @@ export default function CredentialPrompt({
   const [inputValue, setInputValue] = useState('');
   const [validationResult, setValidationResult] =
     useState<ValidationResult | null>(null);
+
+  // Auto-advance after showing validation result
+  useEffect(() => {
+    if (phase !== 'result' || !validationResult) return;
+
+    const timer = setTimeout(() => {
+      setValidationResult(null);
+      setCurrentIndex((i) => i + 1);
+      setInputValue('');
+      setPhase('prompt');
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [phase, validationResult]);
 
   // Phase: intro — ask whether to configure credentials
   if (phase === 'intro') {
@@ -121,18 +135,8 @@ export default function CredentialPrompt({
     );
   }
 
-  // Phase: result — show validation result, then advance
+  // Phase: result — show validation result (useEffect above handles advance)
   if (phase === 'result' && validationResult) {
-    const advanceToNext = () => {
-      setValidationResult(null);
-      setCurrentIndex(currentIndex + 1);
-      setInputValue('');
-      setPhase('prompt');
-    };
-
-    // Auto-advance after a brief delay so user can read result
-    setTimeout(advanceToNext, 1500);
-
     return (
       <Box flexDirection="column" paddingY={1}>
         {validationResult.valid ? (
