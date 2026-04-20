@@ -1,10 +1,4 @@
-<<<<<<< Updated upstream
-import { describe, it, expect } from '@jest/globals';
-
-describe('prerequisites utils', () => {
-  it('placeholder test', () => {
-    expect(true).toBe(true);
-=======
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import {
   detectAnsible,
@@ -23,15 +17,13 @@ describe('detectAnsible', () => {
   });
 
   it('detects installed Ansible with version', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
-        callback(null, { stdout: 'ansible [core 2.15.0]' });
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
+        callback(null, { stdout: 'ansible [core 2.15.0]', stderr: '' });
       }
-    );
+    }) as typeof exec);
 
     const result = await detectAnsible();
 
@@ -40,15 +32,13 @@ describe('detectAnsible', () => {
   });
 
   it('returns not installed when command fails', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
         callback(new Error('Command not found'), null);
       }
-    );
+    }) as typeof exec);
 
     const result = await detectAnsible();
 
@@ -63,15 +53,13 @@ describe('detectTerraform', () => {
   });
 
   it('detects installed Terraform with version', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
-        callback(null, { stdout: 'Terraform v1.5.7' });
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
+        callback(null, { stdout: 'Terraform v1.5.7', stderr: '' });
       }
-    );
+    }) as typeof exec);
 
     const result = await detectTerraform();
 
@@ -80,15 +68,13 @@ describe('detectTerraform', () => {
   });
 
   it('returns not installed when command fails', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
         callback(new Error('Command not found'), null);
       }
-    );
+    }) as typeof exec);
 
     const result = await detectTerraform();
 
@@ -103,15 +89,13 @@ describe('isBrewAvailable', () => {
   });
 
   it('returns true when brew is available', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
-        callback(null, { stdout: '/usr/local/bin/brew' });
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
+        callback(null, { stdout: '/usr/local/bin/brew', stderr: '' });
       }
-    );
+    }) as typeof exec);
 
     const result = await isBrewAvailable();
 
@@ -119,19 +103,16 @@ describe('isBrewAvailable', () => {
   });
 
   it('returns false when brew is not available', async () => {
-    const execMock = exec as unknown as jest.Mock;
-    execMock.mockImplementation(
-      (
-        _cmd: unknown,
-        callback: (err: Error | null, result: { stdout: string } | null) => void
-      ) => {
+    const execMock = exec as jest.MockedFunction<typeof exec>;
+    execMock.mockImplementation(((...args: any[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
         callback(new Error('Command not found'), null);
       }
-    );
+    }) as typeof exec);
 
     const result = await isBrewAvailable();
 
     expect(result).toBe(false);
->>>>>>> Stashed changes
   });
 });

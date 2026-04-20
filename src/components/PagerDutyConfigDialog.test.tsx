@@ -1,10 +1,3 @@
-<<<<<<< Updated upstream
-import { describe, it, expect } from '@jest/globals';
-
-describe('PagerDutyConfigDialog', () => {
-  it('placeholder test for PagerDutyConfigDialog', () => {
-    expect(true).toBe(true);
-=======
 import { describe, it, expect, jest } from '@jest/globals';
 import { render } from 'ink-testing-library';
 import PagerDutyConfigDialog from './PagerDutyConfigDialog.js';
@@ -69,6 +62,5 @@ describe('PagerDutyConfigDialog', () => {
       userEmail: 'user@example.com',
       alertEmail: 'alert@example.com',
     });
->>>>>>> Stashed changes
   });
 });
