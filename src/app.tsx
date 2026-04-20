@@ -1,5 +1,10 @@
 import { Box, Text } from 'ink';
 import { useState, useEffect, useCallback } from 'react';
+import DeviceProfileDialog from './components/DeviceProfileDialog.js';
+import type { DeviceProfile } from './components/DeviceProfileDialog.js';
+import { PROFILE_DEFAULTS } from './components/DeviceProfileDialog.js';
+import ObservabilityRemoteDialog from './components/ObservabilityRemoteDialog.js';
+import type { ObservabilityRemoteConfig } from './components/ObservabilityRemoteDialog.js';
 import DeviceTypeDialog from './components/DeviceTypeDialog.js';
 import ConnectionDialog from './components/ConnectionDialog.js';
 import DirectoryDialog from './components/DirectoryDialog.js';
@@ -27,6 +32,10 @@ interface AppProps {
 }
 
 export default function App({ profile = 'default' }: AppProps) {
+  // Step 0: Device profile
+  const [deviceProfile, setDeviceProfile] = useState<DeviceProfile | null>(null);
+  const [observabilityRemote, setObservabilityRemote] = useState<ObservabilityRemoteConfig | null | undefined>(undefined);
+
   // Steps 1-3: Device type, connection, directory, download (unchanged)
   const [deviceType, setDeviceType] = useState<string | null>(null);
   const [connection, setConnection] = useState<any>(null);
@@ -98,10 +107,12 @@ export default function App({ profile = 'default' }: AppProps) {
         // Write iac-toolbox.yml
         const configPath = await writeIacToolboxYaml(directory, {
           selectedIntegrations,
+          deviceProfile: deviceProfile ?? undefined,
           githubBuildWorkflow: githubBuildWorkflowConfig ?? undefined,
           cloudflare: cloudflareConfig ?? undefined,
           vault: vaultConfig ?? undefined,
           grafana: grafanaConfig ?? undefined,
+          observabilityRemote: observabilityRemote,
         });
         setWrittenConfigPath(configPath);
 
@@ -135,6 +146,11 @@ export default function App({ profile = 'default' }: AppProps) {
     githubBuildWorkflowConfig,
     profile,
   ]);
+
+  // 0. Device profile selection
+  if (!deviceProfile) {
+    return <DeviceProfileDialog onSelect={setDeviceProfile} />;
+  }
 
   // 1. Device type selection
   if (!deviceType) {
@@ -179,6 +195,7 @@ export default function App({ profile = 'default' }: AppProps) {
   if (selectedIntegrations === null) {
     return (
       <IntegrationSelectDialog
+        defaultSelected={PROFILE_DEFAULTS[deviceProfile]}
         onConfirm={(ids) => {
           setSelectedIntegrations(ids);
           if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare') && !ids.includes('vault') && !ids.includes('grafana')) {
@@ -210,6 +227,20 @@ export default function App({ profile = 'default' }: AppProps) {
     if (selectedIntegrations.includes('grafana') && !grafanaConfig) {
       return <GrafanaConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setGrafanaConfig} />;
     }
+  }
+
+  // 6b. Observability remote dialog (App Server without Grafana)
+  if (
+    deviceProfile === 'app-server' &&
+    selectedIntegrations &&
+    !selectedIntegrations.includes('grafana') &&
+    observabilityRemote === undefined
+  ) {
+    return (
+      <ObservabilityRemoteDialog
+        onComplete={(config) => setObservabilityRemote(config)}
+      />
+    );
   }
 
   // 7. Summary screen

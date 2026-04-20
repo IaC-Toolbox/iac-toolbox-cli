@@ -9,6 +9,7 @@ export interface Integration {
 }
 
 interface IntegrationSelectDialogProps {
+  defaultSelected?: string[];
   onConfirm: (selectedIds: string[]) => void;
 }
 
@@ -56,10 +57,16 @@ const INTEGRATIONS: Integration[] = [
  * - Enter: Confirm and proceed
  */
 export default function IntegrationSelectDialog({
+  defaultSelected = [],
   onConfirm,
 }: IntegrationSelectDialogProps) {
   const [cursor, setCursor] = useState(0);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    const validDefaults = defaultSelected.filter(id =>
+      INTEGRATIONS.some(i => i.id === id && i.selectable)
+    );
+    return new Set(validDefaults);
+  });
 
   // Find next selectable index in a given direction
   const findNextSelectable = (from: number, direction: 1 | -1): number => {
