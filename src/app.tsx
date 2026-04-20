@@ -119,6 +119,7 @@ export default function App({ profile = 'default' }: AppProps) {
         // Write credentials
         const creds: Record<string, string> = {};
         if (githubBuildWorkflowConfig) {
+          creds.docker_hub_username = githubBuildWorkflowConfig.dockerHubUsername;
           creds.docker_hub_token = githubBuildWorkflowConfig.dockerHubToken;
         }
         if (cloudflareConfig) {
