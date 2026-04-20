@@ -1,10 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { GitHubBuildWorkflowConfig } from '../components/GitHubBuildWorkflowDialog.js';
+import type { CloudflareConfig } from '../components/CloudflareConfigDialog.js';
 
 interface IacToolboxYamlConfig {
   selectedIntegrations: string[];
   githubBuildWorkflow?: GitHubBuildWorkflowConfig;
+  cloudflare?: CloudflareConfig;
 }
 
 /**
@@ -41,8 +43,25 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
   lines.push('github_runner:');
   lines.push('  enabled: false # coming soon');
   lines.push('');
-  lines.push('cloudflare:');
-  lines.push('  enabled: false # coming soon');
+
+  // Cloudflare
+  if (config.selectedIntegrations.includes('cloudflare') && config.cloudflare) {
+    const cf = config.cloudflare;
+    lines.push('cloudflare:');
+    lines.push('  enabled: true');
+    lines.push(`  mode: "${cf.mode}"`);
+    lines.push(`  tunnel_name: "${cf.tunnelName}"`);
+    lines.push(`  account_id: "${cf.accountId}"`);
+    lines.push(`  zone_id: "${cf.zoneId}"`);
+    lines.push('  cloudflare_api_token: "{{ cloudflare_api_token }}" # injected by CLI at deploy time');
+    lines.push('  domains:');
+    lines.push(`    - hostname: "${cf.hostname}"`);
+    lines.push(`      service_port: ${cf.servicePort}`);
+    lines.push(`      service: "http://localhost:${cf.servicePort}"`);
+  } else {
+    lines.push('cloudflare:');
+    lines.push('  enabled: false # coming soon');
+  }
   lines.push('');
   lines.push('vault:');
   lines.push('  enabled: false # coming soon');
