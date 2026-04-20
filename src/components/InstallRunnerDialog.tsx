@@ -94,7 +94,7 @@ export default function InstallRunnerDialog({
         {running && <Spinner type="dots" />}
       </Text>
       <Text>{'│'}</Text>
-      <Text dimColor>{'│ Output from install.sh is streamed below:'}</Text>
+      <Text dimColor>{'│ (Output is written to your terminal)'}</Text>
       <Text>{'│'}</Text>
     </Box>
   );
