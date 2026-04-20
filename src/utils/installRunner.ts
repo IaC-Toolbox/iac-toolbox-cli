@@ -7,6 +7,7 @@ export interface InstallResult {
   success: boolean;
   exitCode: number | null;
   lastErrorLine: string | null;
+  errorLines: string[] | null;
 }
 
 /**
@@ -89,23 +90,36 @@ export function runInstallScript(
         success: false,
         exitCode: 1,
         lastErrorLine: `install.sh not found at ${scriptPath}`,
+        errorLines: [`install.sh not found at ${scriptPath}`],
       });
       return;
     }
 
     let lastStderrLine = '';
+    const stderrLines: string[] = [];
+    const maxErrorLines = 15;
 
     const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
       env,
       stdio: ['inherit', 'inherit', 'pipe'],
     });
 
-    // Capture stderr to get last error line on failure
+    // Capture stderr to get last error lines on failure
     child.stderr?.on('data', (data: Buffer) => {
       const text = data.toString();
       // Also pipe stderr to terminal
       process.stderr.write(text);
-      const lines = text.trim().split('\n');
+      const lines = text.trim().split('\n').filter(line => line.trim() !== '');
+
+      // Add new lines to the buffer
+      stderrLines.push(...lines);
+
+      // Keep only the last maxErrorLines
+      if (stderrLines.length > maxErrorLines) {
+        stderrLines.splice(0, stderrLines.length - maxErrorLines);
+      }
+
+      // Track the very last line for backwards compatibility
       const lastLine = lines[lines.length - 1];
       if (lastLine) {
         lastStderrLine = lastLine;
@@ -123,6 +137,7 @@ export function runInstallScript(
         success: code === 0,
         exitCode: code,
         lastErrorLine: code !== 0 ? lastStderrLine || null : null,
+        errorLines: code !== 0 && stderrLines.length > 0 ? stderrLines : null,
       });
     });
 
@@ -132,6 +147,7 @@ export function runInstallScript(
         success: false,
         exitCode: 1,
         lastErrorLine: err.message,
+        errorLines: [err.message],
       });
     });
   });
