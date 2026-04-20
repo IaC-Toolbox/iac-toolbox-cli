@@ -42,8 +42,12 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
   if (config.observabilityRemote) {
     lines.push('observability:');
     lines.push('  remote: true');
-    lines.push(`  prometheus_host: "${config.observabilityRemote.prometheusHost}"`);
-    lines.push(`  prometheus_port: ${config.observabilityRemote.prometheusPort}`);
+    lines.push(
+      `  prometheus_host: "${config.observabilityRemote.prometheusHost}"`
+    );
+    lines.push(
+      `  prometheus_port: ${config.observabilityRemote.prometheusPort}`
+    );
     lines.push(`  loki_host: "${config.observabilityRemote.lokiHost}"`);
     lines.push(`  loki_port: ${config.observabilityRemote.lokiPort}`);
     lines.push('');
@@ -54,12 +58,21 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
   lines.push('');
 
   // GitHub Build Workflow
-  if (config.selectedIntegrations.includes('github_build_workflow') && config.githubBuildWorkflow) {
+  if (
+    config.selectedIntegrations.includes('github_build_workflow') &&
+    config.githubBuildWorkflow
+  ) {
     lines.push('github_build_workflow:');
     lines.push('  enabled: true');
-    lines.push(`  docker_hub_username: "${config.githubBuildWorkflow.dockerHubUsername}"`);
-    lines.push(`  docker_image_name: "${config.githubBuildWorkflow.dockerImageName}"`);
-    lines.push('  docker_hub_token: "{{ docker_hub_token }}" # injected by CLI at deploy time');
+    lines.push(
+      `  docker_hub_username: "${config.githubBuildWorkflow.dockerHubUsername}"`
+    );
+    lines.push(
+      `  docker_image_name: "${config.githubBuildWorkflow.dockerImageName}"`
+    );
+    lines.push(
+      '  docker_hub_token: "{{ docker_hub_token }}" # injected by CLI at deploy time'
+    );
   } else {
     lines.push('github_build_workflow:');
     lines.push('  enabled: false');
@@ -80,7 +93,9 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push(`  tunnel_name: "${cf.tunnelName}"`);
     lines.push(`  account_id: "${cf.accountId}"`);
     lines.push(`  zone_id: "${cf.zoneId}"`);
-    lines.push('  cloudflare_api_token: "{{ cloudflare_api_token }}" # injected by CLI at deploy time');
+    lines.push(
+      '  cloudflare_api_token: "{{ cloudflare_api_token }}" # injected by CLI at deploy time'
+    );
     lines.push('  domains:');
     lines.push(`    - hostname: "${cf.hostname}"`);
     lines.push(`      service_port: ${cf.servicePort}`);
@@ -117,7 +132,9 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('  version: "latest"');
     lines.push('  port: 3000');
     lines.push('  admin_user: "admin"');
-    lines.push('  admin_password: "{{ grafana_admin_password }}" # injected by CLI at deploy time');
+    lines.push(
+      '  admin_password: "{{ grafana_admin_password }}" # injected by CLI at deploy time'
+    );
     if (g.domain) {
       lines.push(`  domain: "${g.domain}"`);
     }
@@ -160,7 +177,7 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
  */
 export async function writeIacToolboxYaml(
   directory: string,
-  config: IacToolboxYamlConfig,
+  config: IacToolboxYamlConfig
 ): Promise<string> {
   const content = generateIacToolboxYaml(config);
   const filePath = path.join(directory, 'iac-toolbox.yml');

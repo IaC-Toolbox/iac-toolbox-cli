@@ -32,14 +32,24 @@ interface AppProps {
   profile?: string;
 }
 
+interface ConnectionConfig {
+  username: string;
+  hostname?: string;
+  sshKey?: string;
+}
+
 export default function App({ profile = 'default' }: AppProps) {
   // Step 0: Device profile
-  const [deviceProfile, setDeviceProfile] = useState<DeviceProfile | null>(null);
-  const [observabilityRemote, setObservabilityRemote] = useState<ObservabilityRemoteConfig | null | undefined>(undefined);
+  const [deviceProfile, setDeviceProfile] = useState<DeviceProfile | null>(
+    null
+  );
+  const [observabilityRemote, setObservabilityRemote] = useState<
+    ObservabilityRemoteConfig | null | undefined
+  >(undefined);
 
   // Steps 1-3: Device type, connection, directory, download (unchanged)
   const [deviceType, setDeviceType] = useState<string | null>(null);
-  const [connection, setConnection] = useState<any>(null);
+  const [connection, setConnection] = useState<ConnectionConfig | null>(null);
   const [directory, setDirectory] = useState<string | null>(null);
   const [downloaded, setDownloaded] = useState(false);
 
@@ -51,9 +61,12 @@ export default function App({ profile = 'default' }: AppProps) {
   // Step 5: Per-module configuration (new)
   const [githubBuildWorkflowConfig, setGithubBuildWorkflowConfig] =
     useState<GitHubBuildWorkflowConfig | null>(null);
-  const [cloudflareConfig, setCloudflareConfig] = useState<CloudflareConfig | null>(null);
+  const [cloudflareConfig, setCloudflareConfig] =
+    useState<CloudflareConfig | null>(null);
   const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
-  const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(null);
+  const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(
+    null
+  );
   const [moduleConfigComplete, setModuleConfigComplete] = useState(false);
 
   // Step 6: Summary + write
@@ -62,14 +75,14 @@ export default function App({ profile = 'default' }: AppProps) {
   >(null);
   const [filesWritten, setFilesWritten] = useState(false);
   const [writtenConfigPath, setWrittenConfigPath] = useState<string | null>(
-    null,
+    null
   );
 
   // Step 7: Install prompt + execution
   const [installChoice, setInstallChoice] = useState<boolean | null>(null);
   const [installRunning, setInstallRunning] = useState(false);
   const [installResult, setInstallResult] = useState<InstallResult | null>(
-    null,
+    null
   );
 
   // Stable callback for install completion (must be at top level for hooks rules)
@@ -82,8 +95,9 @@ export default function App({ profile = 'default' }: AppProps) {
   useEffect(() => {
     if (selectedIntegrations === null) return;
 
-    const needsGithubBuild =
-      selectedIntegrations.includes('github_build_workflow');
+    const needsGithubBuild = selectedIntegrations.includes(
+      'github_build_workflow'
+    );
     const needsCloudflare = selectedIntegrations.includes('cloudflare');
     const needsVault = selectedIntegrations.includes('vault');
     const needsGrafana = selectedIntegrations.includes('grafana');
@@ -95,7 +109,13 @@ export default function App({ profile = 'default' }: AppProps) {
 
     // All selected modules are configured
     setModuleConfigComplete(true);
-  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig, vaultConfig, grafanaConfig]);
+  }, [
+    selectedIntegrations,
+    githubBuildWorkflowConfig,
+    cloudflareConfig,
+    vaultConfig,
+    grafanaConfig,
+  ]);
 
   // Write files on confirm
   useEffect(() => {
@@ -120,7 +140,8 @@ export default function App({ profile = 'default' }: AppProps) {
         // Write credentials
         const creds: Record<string, string> = {};
         if (githubBuildWorkflowConfig) {
-          creds.docker_hub_username = githubBuildWorkflowConfig.dockerHubUsername;
+          creds.docker_hub_username =
+            githubBuildWorkflowConfig.dockerHubUsername;
           creds.docker_hub_token = githubBuildWorkflowConfig.dockerHubToken;
         }
         if (cloudflareConfig) {
@@ -145,7 +166,12 @@ export default function App({ profile = 'default' }: AppProps) {
     filesWritten,
     directory,
     selectedIntegrations,
+    deviceProfile,
     githubBuildWorkflowConfig,
+    cloudflareConfig,
+    vaultConfig,
+    grafanaConfig,
+    observabilityRemote,
     profile,
   ]);
 
@@ -169,12 +195,7 @@ export default function App({ profile = 'default' }: AppProps) {
     }
 
     // For remote mode, show connection dialog
-    return (
-      <ConnectionDialog
-        mode="remote"
-        onComplete={setConnection}
-      />
-    );
+    return <ConnectionDialog mode="remote" onComplete={setConnection} />;
   }
 
   // 3. Scripts destination directory
@@ -208,7 +229,12 @@ export default function App({ profile = 'default' }: AppProps) {
         defaultSelected={PROFILE_DEFAULTS[deviceProfile]}
         onConfirm={(ids) => {
           setSelectedIntegrations(ids);
-          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare') && !ids.includes('vault') && !ids.includes('grafana')) {
+          if (
+            !ids.includes('github_build_workflow') &&
+            !ids.includes('cloudflare') &&
+            !ids.includes('vault') &&
+            !ids.includes('grafana')
+          ) {
             setModuleConfigComplete(true);
           }
         }}
@@ -223,19 +249,27 @@ export default function App({ profile = 'default' }: AppProps) {
       !githubBuildWorkflowConfig
     ) {
       return (
-        <GitHubBuildWorkflowDialog
-          onComplete={setGithubBuildWorkflowConfig}
-        />
+        <GitHubBuildWorkflowDialog onComplete={setGithubBuildWorkflowConfig} />
       );
     }
     if (selectedIntegrations.includes('cloudflare') && !cloudflareConfig) {
       return <CloudflareConfigDialog onComplete={setCloudflareConfig} />;
     }
     if (selectedIntegrations.includes('vault') && !vaultConfig) {
-      return <VaultConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setVaultConfig} />;
+      return (
+        <VaultConfigDialog
+          cloudflareConfig={cloudflareConfig}
+          onComplete={setVaultConfig}
+        />
+      );
     }
     if (selectedIntegrations.includes('grafana') && !grafanaConfig) {
-      return <GrafanaConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setGrafanaConfig} />;
+      return (
+        <GrafanaConfigDialog
+          cloudflareConfig={cloudflareConfig}
+          onComplete={setGrafanaConfig}
+        />
+      );
     }
   }
 

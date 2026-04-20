@@ -51,9 +51,7 @@ export default function CredentialSetDialog({
   if (!isKnownKey) {
     return (
       <Box flexDirection="column" paddingY={1}>
-        <Text color="red">
-          Unknown credential key: {credentialKey}
-        </Text>
+        <Text color="red">Unknown credential key: {credentialKey}</Text>
         <Text dimColor>
           Valid keys: {Object.keys(CREDENTIAL_KEYS).join(', ')}
         </Text>
@@ -78,17 +76,11 @@ export default function CredentialSetDialog({
     return (
       <Box flexDirection="column" paddingY={1}>
         {validationResult.valid ? (
-          <Text color="green">
-            ✔ {validationResult.message}
-          </Text>
+          <Text color="green">✔ {validationResult.message}</Text>
         ) : (
-          <Text color="yellow">
-            ⚠ {validationResult.message}
-          </Text>
+          <Text color="yellow">⚠ {validationResult.message}</Text>
         )}
-        <Text dimColor>
-          Credential saved to profile &quot;{profile}&quot;.
-        </Text>
+        <Text dimColor>Credential saved to profile &quot;{profile}&quot;.</Text>
       </Box>
     );
   }
@@ -134,9 +126,7 @@ export default function CredentialSetDialog({
 
   return (
     <Box flexDirection="column" paddingY={1}>
-      <Text bold>
-        ◆ Set {description}
-      </Text>
+      <Text bold>◆ Set {description}</Text>
       <Box paddingLeft={3}>
         <Text dimColor>
           (Profile: {profile}, current: {displayExisting})

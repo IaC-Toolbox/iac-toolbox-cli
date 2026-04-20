@@ -17,7 +17,10 @@ interface VaultConfigDialogProps {
   onComplete: (config: VaultConfig) => void;
 }
 
-export default function VaultConfigDialog({ cloudflareConfig, onComplete }: VaultConfigDialogProps) {
+export default function VaultConfigDialog({
+  cloudflareConfig,
+  onComplete,
+}: VaultConfigDialogProps) {
   const [decided, setDecided] = useState(false);
 
   const cloudflareEnabled = cloudflareConfig?.enabled === true;
@@ -38,8 +41,14 @@ export default function VaultConfigDialog({ cloudflareConfig, onComplete }: Vaul
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold>◆ Expose Vault publicly via Cloudflare?</Text>
-        <Box paddingLeft={3}><Text dimColor>○ Yes — not available (Cloudflare Tunnel is not enabled)</Text></Box>
-        <Box paddingLeft={3}><Text>● No — local access only (http://localhost:8200)</Text></Box>
+        <Box paddingLeft={3}>
+          <Text dimColor>
+            ○ Yes — not available (Cloudflare Tunnel is not enabled)
+          </Text>
+        </Box>
+        <Box paddingLeft={3}>
+          <Text>● No — local access only (http://localhost:8200)</Text>
+        </Box>
       </Box>
     );
   }
@@ -53,7 +62,9 @@ export default function VaultConfigDialog({ cloudflareConfig, onComplete }: Vaul
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold>◆ Expose Vault publicly via Cloudflare?</Text>
-        <Box paddingLeft={3}><Text dimColor>Suggested domain: {suggestedDomain}</Text></Box>
+        <Box paddingLeft={3}>
+          <Text dimColor>Suggested domain: {suggestedDomain}</Text>
+        </Box>
         <Box paddingLeft={3}>
           <SelectInput
             items={options}

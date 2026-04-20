@@ -17,7 +17,10 @@ interface GrafanaConfigDialogProps {
 
 type Step = 'password' | 'confirm' | 'domain';
 
-export default function GrafanaConfigDialog({ cloudflareConfig, onComplete }: GrafanaConfigDialogProps) {
+export default function GrafanaConfigDialog({
+  cloudflareConfig,
+  onComplete,
+}: GrafanaConfigDialogProps) {
   const [step, setStep] = useState<Step>('password');
   const [password, setPassword] = useState('');
   const [inputValue, setInputValue] = useState('');
@@ -79,8 +82,14 @@ export default function GrafanaConfigDialog({ cloudflareConfig, onComplete }: Gr
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold>◆ Expose Grafana publicly via Cloudflare?</Text>
-        <Box paddingLeft={3}><Text dimColor>○ Yes — not available (Cloudflare Tunnel is not enabled)</Text></Box>
-        <Box paddingLeft={3}><Text>● No — local access only (http://localhost:3000)</Text></Box>
+        <Box paddingLeft={3}>
+          <Text dimColor>
+            ○ Yes — not available (Cloudflare Tunnel is not enabled)
+          </Text>
+        </Box>
+        <Box paddingLeft={3}>
+          <Text>● No — local access only (http://localhost:3000)</Text>
+        </Box>
       </Box>
     );
   }
@@ -93,7 +102,9 @@ export default function GrafanaConfigDialog({ cloudflareConfig, onComplete }: Gr
   return (
     <Box flexDirection="column" paddingY={1}>
       <Text bold>◆ Expose Grafana publicly via Cloudflare?</Text>
-      <Box paddingLeft={3}><Text dimColor>Suggested domain: {suggestedDomain}</Text></Box>
+      <Box paddingLeft={3}>
+        <Text dimColor>Suggested domain: {suggestedDomain}</Text>
+      </Box>
       <Box paddingLeft={3}>
         <SelectInput
           items={options}

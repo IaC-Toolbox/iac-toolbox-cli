@@ -53,8 +53,62 @@ interface WizardConfig {
   };
 }
 
+interface YamlConfig {
+  docker?: { enabled: boolean };
+  vault?: {
+    enabled: boolean;
+    version: string;
+    base_dir: string;
+    port: number;
+    enable_kv: boolean;
+    enable_audit: boolean;
+  };
+  cloudflare?: {
+    enabled: boolean;
+    mode: string;
+    tunnel_name: string;
+    account_id: string;
+    zone_id: string;
+    domains: Array<{
+      hostname: string;
+      service_port: number;
+      service: string;
+    }>;
+  };
+  grafana?: {
+    enabled: boolean;
+    version: string;
+    base_dir: string;
+    port: number;
+    admin_user: string;
+    admin_password: string;
+    vault_path: string;
+    domain: string;
+  };
+  prometheus?: {
+    enabled: boolean;
+    version: string;
+    base_dir: string;
+    port: number;
+    scrape_interval: string;
+    retention: string;
+  };
+  node_exporter?: {
+    version: string;
+    port: number;
+  };
+  github_runner?: {
+    enabled: boolean;
+    repo_url: string;
+    token: string;
+    version: string;
+    labels: string;
+    work_dir: string;
+  };
+}
+
 function generateConfigYaml(config: WizardConfig): string {
-  const yamlConfig: any = {};
+  const yamlConfig: YamlConfig = {};
 
   if (config.docker.enabled) {
     yamlConfig.docker = { enabled: true };
