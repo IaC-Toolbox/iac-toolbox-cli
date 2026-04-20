@@ -11,6 +11,8 @@ import CloudflareConfigDialog from './components/CloudflareConfigDialog.js';
 import type { CloudflareConfig } from './components/CloudflareConfigDialog.js';
 import VaultConfigDialog from './components/VaultConfigDialog.js';
 import type { VaultConfig } from './components/VaultConfigDialog.js';
+import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
+import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
 import WizardSummaryDialog from './components/WizardSummaryDialog.js';
 import InstallPromptDialog from './components/InstallPromptDialog.js';
 import InstallRunnerDialog from './components/InstallRunnerDialog.js';
@@ -41,6 +43,7 @@ export default function App({ profile = 'default' }: AppProps) {
     useState<GitHubBuildWorkflowConfig | null>(null);
   const [cloudflareConfig, setCloudflareConfig] = useState<CloudflareConfig | null>(null);
   const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
+  const [grafanaConfig, setGrafanaConfig] = useState<GrafanaConfig | null>(null);
   const [moduleConfigComplete, setModuleConfigComplete] = useState(false);
 
   // Step 6: Summary + write
@@ -73,14 +76,16 @@ export default function App({ profile = 'default' }: AppProps) {
       selectedIntegrations.includes('github_build_workflow');
     const needsCloudflare = selectedIntegrations.includes('cloudflare');
     const needsVault = selectedIntegrations.includes('vault');
+    const needsGrafana = selectedIntegrations.includes('grafana');
 
     if (needsGithubBuild && githubBuildWorkflowConfig === null) return;
     if (needsCloudflare && cloudflareConfig === null) return;
     if (needsVault && vaultConfig === null) return;
+    if (needsGrafana && grafanaConfig === null) return;
 
     // All selected modules are configured
     setModuleConfigComplete(true);
-  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig, vaultConfig]);
+  }, [selectedIntegrations, githubBuildWorkflowConfig, cloudflareConfig, vaultConfig, grafanaConfig]);
 
   // Write files on confirm
   useEffect(() => {
@@ -96,6 +101,7 @@ export default function App({ profile = 'default' }: AppProps) {
           githubBuildWorkflow: githubBuildWorkflowConfig ?? undefined,
           cloudflare: cloudflareConfig ?? undefined,
           vault: vaultConfig ?? undefined,
+          grafana: grafanaConfig ?? undefined,
         });
         setWrittenConfigPath(configPath);
 
@@ -106,6 +112,9 @@ export default function App({ profile = 'default' }: AppProps) {
         }
         if (cloudflareConfig) {
           creds.cloudflare_api_token = cloudflareConfig.token;
+        }
+        if (grafanaConfig) {
+          creds.grafana_admin_password = grafanaConfig.adminPassword;
         }
         if (Object.keys(creds).length > 0) {
           saveCredentials(creds, profile);
@@ -172,7 +181,7 @@ export default function App({ profile = 'default' }: AppProps) {
       <IntegrationSelectDialog
         onConfirm={(ids) => {
           setSelectedIntegrations(ids);
-          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare') && !ids.includes('vault')) {
+          if (!ids.includes('github_build_workflow') && !ids.includes('cloudflare') && !ids.includes('vault') && !ids.includes('grafana')) {
             setModuleConfigComplete(true);
           }
         }}
@@ -197,6 +206,9 @@ export default function App({ profile = 'default' }: AppProps) {
     }
     if (selectedIntegrations.includes('vault') && !vaultConfig) {
       return <VaultConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setVaultConfig} />;
+    }
+    if (selectedIntegrations.includes('grafana') && !grafanaConfig) {
+      return <GrafanaConfigDialog cloudflareConfig={cloudflareConfig} onComplete={setGrafanaConfig} />;
     }
   }
 

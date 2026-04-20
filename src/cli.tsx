@@ -110,6 +110,35 @@ vault
     process.exit(result.status ?? 1);
   });
 
+const grafana = program
+  .command('grafana')
+  .description('Manage Grafana observability stack');
+
+grafana
+  .command('install')
+  .description('Install or reinstall Grafana observability stack')
+  .action(() => {
+    const { spawnSync } = require('child_process');
+    const { loadCredentials } = require('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = { ...process.env, GRAFANA_ADMIN_PASSWORD: creds.grafana_admin_password || '' };
+    const result = spawnSync('bash', ['infrastructure/scripts/install.sh', '--ansible-only', '--local'], {
+      env, stdio: 'inherit',
+    });
+    process.exit(result.status ?? 1);
+  });
+
+grafana
+  .command('uninstall')
+  .description('Remove Grafana and all observability data')
+  .action(() => {
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('bash', ['infrastructure/scripts/uninstall-loki.sh', '--local'], {
+      stdio: 'inherit',
+    });
+    process.exit(result.status ?? 1);
+  });
+
 program
   .command('uninstall')
   .description('Remove the previously installed infra')
