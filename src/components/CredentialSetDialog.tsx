@@ -36,7 +36,7 @@ export default function CredentialSetDialog({
   const description = isKnownKey
     ? CREDENTIAL_KEYS[credentialKey as CredentialKey]
     : credentialKey;
-  const existingValue = getCredential(credentialKey, profile);
+  const [existingValue] = useState(() => getCredential(credentialKey, profile));
 
   // Exit after showing result
   useEffect(() => {

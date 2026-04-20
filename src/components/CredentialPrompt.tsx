@@ -28,7 +28,7 @@ interface SelectOption {
   value: string;
 }
 
-type PromptPhase = 'intro' | 'prompt' | 'validating' | 'result' | 'done';
+type PromptPhase = 'intro' | 'prompt' | 'validating' | 'result';
 
 const credentialKeyList = Object.keys(CREDENTIAL_KEYS) as CredentialKey[];
 
@@ -58,6 +58,15 @@ export default function CredentialPrompt({
 
     return () => clearTimeout(timer);
   }, [phase, validationResult]);
+
+  // Save credentials and signal completion when all prompts are done
+  useEffect(() => {
+    if (currentIndex < credentialKeyList.length) return;
+    if (Object.keys(collected).length > 0) {
+      saveCredentials(collected, profile);
+    }
+    onComplete(collected);
+  }, [currentIndex]);
 
   // Phase: intro — ask whether to configure credentials
   if (phase === 'intro') {
@@ -92,17 +101,8 @@ export default function CredentialPrompt({
     );
   }
 
-  // All credentials collected — save and finish
-  if (phase === 'done' || currentIndex >= credentialKeyList.length) {
-    if (Object.keys(collected).length > 0) {
-      saveCredentials(collected, profile);
-    }
-    // Trigger onComplete in the next tick to avoid render-during-render
-    if (phase !== 'done') {
-      setPhase('done');
-      setTimeout(() => onComplete(collected), 0);
-    }
-
+  // All credentials collected — show done state (useEffect above handles save + onComplete)
+  if (currentIndex >= credentialKeyList.length) {
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold color="green">
