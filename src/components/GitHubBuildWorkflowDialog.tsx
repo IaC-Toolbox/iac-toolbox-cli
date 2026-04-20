@@ -1,6 +1,7 @@
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { loadCredentials } from '../utils/credentials.js';
 
 export interface GitHubBuildWorkflowConfig {
   dockerHubUsername: string;
@@ -29,10 +30,30 @@ export default function GitHubBuildWorkflowDialog({
   const [username, setUsername] = useState('');
   const [token, setToken] = useState('');
   const [inputValue, setInputValue] = useState('');
+  const [savedUsername, setSavedUsername] = useState<string | undefined>();
+  const [savedToken, setSavedToken] = useState<string | undefined>();
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const credentials = loadCredentials('default');
+    const savedUser = credentials.docker_hub_username;
+    const savedTok = credentials.docker_hub_token;
+
+    setSavedUsername(savedUser);
+    setSavedToken(savedTok);
+
+    // Pre-fill username and token state if credentials exist
+    if (savedUser) {
+      setUsername(savedUser);
+    }
+    if (savedTok) {
+      setToken(savedTok);
+    }
+  }, []);
 
   if (step === 'username') {
     const handleSubmit = (value: string) => {
-      const finalValue = value.trim();
+      const finalValue = value.trim() || savedUsername || '';
       if (finalValue) {
         setUsername(finalValue);
         setInputValue('');
@@ -48,6 +69,13 @@ export default function GitHubBuildWorkflowDialog({
         <Text>{'│ GitHub Build Workflow'}</Text>
         <Text>{'│'}</Text>
         <Text bold>{'◆ Docker Hub username'}</Text>
+        {savedUsername && (
+          <Box paddingLeft={3}>
+            <Text dimColor>
+              (Default: {savedUsername} — press Enter to use default)
+            </Text>
+          </Box>
+        )}
         <Box paddingLeft={3} marginTop={1}>
           <Text>{'› '}</Text>
           <TextInput
@@ -62,7 +90,7 @@ export default function GitHubBuildWorkflowDialog({
 
   if (step === 'token') {
     const handleSubmit = (value: string) => {
-      const finalValue = value.trim();
+      const finalValue = value.trim() || savedToken || '';
       if (finalValue) {
         setToken(finalValue);
         setInputValue('');
@@ -78,6 +106,13 @@ export default function GitHubBuildWorkflowDialog({
         <Text>{'│ GitHub Build Workflow'}</Text>
         <Text>{'│'}</Text>
         <Text bold>{'◆ Docker Hub token'}</Text>
+        {savedToken && (
+          <Box paddingLeft={3}>
+            <Text dimColor>
+              (Default: ******** — press Enter to use saved token)
+            </Text>
+          </Box>
+        )}
         <Box paddingLeft={3} marginTop={1}>
           <Text>{'› '}</Text>
           <TextInput
