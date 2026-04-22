@@ -75,22 +75,26 @@ export function getManualRunCommand(destination: string): string {
 /**
  * Run the install script with --ansible-only --local flags.
  *
- * Streams stdout/stderr directly to the terminal via stdio: 'inherit'.
- * Returns a promise that resolves with the exit code and last error line.
+ * Pipes both stdout and stderr so all output lines are forwarded to the
+ * optional onLine callback in real time. Returns a promise that resolves
+ * with the exit code and last error line.
  */
 export function runInstallScript(
   destination: string,
-  env: Record<string, string>
+  env: Record<string, string>,
+  onLine?: (line: string) => void
 ): Promise<InstallResult> {
   return new Promise((resolve) => {
     const scriptPath = resolveInstallScript(destination);
 
     if (!fs.existsSync(scriptPath)) {
+      const msg = `install.sh not found at ${scriptPath}`;
+      onLine?.(msg);
       resolve({
         success: false,
         exitCode: 1,
-        lastErrorLine: `install.sh not found at ${scriptPath}`,
-        errorLines: [`install.sh not found at ${scriptPath}`],
+        lastErrorLine: msg,
+        errorLines: [msg],
       });
       return;
     }
@@ -101,18 +105,26 @@ export function runInstallScript(
 
     const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
       env,
-      stdio: ['inherit', 'inherit', 'pipe'],
+      stdio: ['inherit', 'pipe', 'pipe'],
     });
 
-    // Capture stderr to get last error lines on failure
+    const emitLines = (text: string) => {
+      const lines = text.split('\n').filter((line) => line.trim() !== '');
+      for (const line of lines) {
+        onLine?.(line);
+      }
+      return lines;
+    };
+
+    // Capture and forward stdout lines
+    child.stdout?.on('data', (data: Buffer) => {
+      emitLines(data.toString());
+    });
+
+    // Capture stderr lines for error summary and forward to caller
     child.stderr?.on('data', (data: Buffer) => {
       const text = data.toString();
-      // Also pipe stderr to terminal
-      process.stderr.write(text);
-      const lines = text
-        .trim()
-        .split('\n')
-        .filter((line) => line.trim() !== '');
+      const lines = emitLines(text);
 
       // Add new lines to the buffer
       stderrLines.push(...lines);
@@ -136,11 +148,6 @@ export function runInstallScript(
 
     child.on('close', (code) => {
       process.removeListener('SIGINT', sigintHandler);
-      // Wait for stdio buffers to fully flush before resolving.
-      // The 'close' event fires when the process exits, but inherited stdio
-      // streams may still have buffered data that hasn't been written to the
-      // terminal yet. A short delay ensures the user sees complete output
-      // before the component unmounts and the UI transitions.
       setTimeout(() => {
         resolve({
           success: code === 0,
@@ -153,9 +160,7 @@ export function runInstallScript(
 
     child.on('error', (err) => {
       process.removeListener('SIGINT', sigintHandler);
-      // Wait for stdio buffers to fully flush before resolving.
-      // Apply the same delay as the 'close' handler to ensure any
-      // buffered output is written before the UI transitions.
+      onLine?.(err.message);
       setTimeout(() => {
         resolve({
           success: false,
