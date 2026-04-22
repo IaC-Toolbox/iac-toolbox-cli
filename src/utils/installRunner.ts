@@ -7,6 +7,7 @@ export interface InstallResult {
   success: boolean;
   exitCode: number | null;
   lastErrorLine: string | null;
+  errorLines: string[] | null;
 }
 
 /**
@@ -29,12 +30,12 @@ const REQUIRED_ENV_VARS = [
 export function buildInstallEnv(
   profile: string = 'default',
   dockerHubUsername?: string,
-  dockerImageName?: string,
+  dockerImageName?: string
 ): Record<string, string> {
   const creds = loadCredentials(profile);
 
   return {
-    ...process.env as Record<string, string>,
+    ...(process.env as Record<string, string>),
     RPI_HOST: 'localhost',
     RPI_USER: os.userInfo().username,
     DOCKER_HUB_USERNAME: dockerHubUsername || creds.docker_hub_username || '',
@@ -79,7 +80,7 @@ export function getManualRunCommand(destination: string): string {
  */
 export function runInstallScript(
   destination: string,
-  env: Record<string, string>,
+  env: Record<string, string>
 ): Promise<InstallResult> {
   return new Promise((resolve) => {
     const scriptPath = resolveInstallScript(destination);
@@ -89,11 +90,14 @@ export function runInstallScript(
         success: false,
         exitCode: 1,
         lastErrorLine: `install.sh not found at ${scriptPath}`,
+        errorLines: [`install.sh not found at ${scriptPath}`],
       });
       return;
     }
 
-    let lastErrorLines: string[] = [];
+    let lastStderrLine = '';
+    const stderrLines: string[] = [];
+    const maxErrorLines = 15;
 
     const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
       env,
@@ -105,9 +109,24 @@ export function runInstallScript(
       const text = data.toString();
       // Also pipe stderr to terminal
       process.stderr.write(text);
-      const lines = text.trim().split('\n').filter(line => line.length > 0);
-      // Keep last 5 error lines
-      lastErrorLines = lastErrorLines.concat(lines).slice(-5);
+      const lines = text
+        .trim()
+        .split('\n')
+        .filter((line) => line.trim() !== '');
+
+      // Add new lines to the buffer
+      stderrLines.push(...lines);
+
+      // Keep only the last maxErrorLines
+      if (stderrLines.length > maxErrorLines) {
+        stderrLines.splice(0, stderrLines.length - maxErrorLines);
+      }
+
+      // Track the very last line for backwards compatibility
+      const lastLine = lines[lines.length - 1];
+      if (lastLine) {
+        lastStderrLine = lastLine;
+      }
     });
 
     const sigintHandler = () => {
@@ -121,16 +140,22 @@ export function runInstallScript(
       // Join last error lines, preferring ones with "Error:" or "failed"
       let errorMessage = null;
       if (code !== 0 && lastErrorLines.length > 0) {
-        const criticalErrors = lastErrorLines.filter(line =>
-          line.includes('Error:') || line.includes('failed') || line.includes('FAILED')
+        const criticalErrors = lastErrorLines.filter(
+          (line) =>
+            line.includes('Error:') ||
+            line.includes('failed') ||
+            line.includes('FAILED')
         );
-        errorMessage = (criticalErrors.length > 0 ? criticalErrors : lastErrorLines).join(' | ');
+        errorMessage = (
+          criticalErrors.length > 0 ? criticalErrors : lastErrorLines
+        ).join(' | ');
       }
 
       resolve({
         success: code === 0,
         exitCode: code,
-        lastErrorLine: errorMessage,
+        lastErrorLine: code !== 0 ? lastStderrLine || null : null,
+        errorLines: code !== 0 && stderrLines.length > 0 ? stderrLines : null,
       });
     });
 
@@ -140,6 +165,7 @@ export function runInstallScript(
         success: false,
         exitCode: 1,
         lastErrorLine: err.message,
+        errorLines: [err.message],
       });
     });
   });

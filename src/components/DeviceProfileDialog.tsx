@@ -8,7 +8,10 @@ interface DeviceProfileDialogProps {
 }
 
 const PROFILES = [
-  { label: 'DevOps Server (CI runner, secrets, observability)', value: 'devops-server' },
+  {
+    label: 'DevOps Server (CI runner, secrets, observability)',
+    value: 'devops-server',
+  },
   { label: 'App Server (deploy and run applications)', value: 'app-server' },
   { label: 'Both', value: 'both' },
 ];
@@ -16,10 +19,12 @@ const PROFILES = [
 export const PROFILE_DEFAULTS: Record<DeviceProfile, string[]> = {
   'devops-server': ['github_runner', 'cloudflare', 'vault', 'grafana'],
   'app-server': ['github_build_workflow', 'cloudflare'],
-  'both': [],
+  both: [],
 };
 
-export default function DeviceProfileDialog({ onSelect }: DeviceProfileDialogProps) {
+export default function DeviceProfileDialog({
+  onSelect,
+}: DeviceProfileDialogProps) {
   return (
     <Box flexDirection="column" paddingY={1}>
       <Text bold>◆ What is this device for?</Text>

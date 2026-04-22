@@ -62,8 +62,8 @@ export default function IntegrationSelectDialog({
 }: IntegrationSelectDialogProps) {
   const [cursor, setCursor] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(() => {
-    const validDefaults = defaultSelected.filter(id =>
-      INTEGRATIONS.some(i => i.id === id && i.selectable)
+    const validDefaults = defaultSelected.filter((id) =>
+      INTEGRATIONS.some((i) => i.id === id && i.selectable)
     );
     return new Set(validDefaults);
   });
@@ -112,9 +112,7 @@ export default function IntegrationSelectDialog({
       <Text>{'│'}</Text>
       <Text bold>{'◆ Select integrations to install'}</Text>
       <Box paddingLeft={2}>
-        <Text dimColor>
-          Use space to select, enter to confirm
-        </Text>
+        <Text dimColor>Use space to select, enter to confirm</Text>
       </Box>
       <Box paddingLeft={2}>
         <Text dimColor>
@@ -129,7 +127,8 @@ export default function IntegrationSelectDialog({
           if (!integration.selectable) {
             return (
               <Text key={integration.id} dimColor>
-                {'  '}{'○'} {integration.label}
+                {'  '}
+                {'○'} {integration.label}
                 {integration.hint ? ` — ${integration.hint}` : ''}
               </Text>
             );
@@ -138,8 +137,7 @@ export default function IntegrationSelectDialog({
           return (
             <Text key={integration.id}>
               {isCursor ? '❯ ' : '  '}
-              {isSelected ? '◉' : '○'}{' '}
-              {integration.label}
+              {isSelected ? '◉' : '○'} {integration.label}
             </Text>
           );
         })}

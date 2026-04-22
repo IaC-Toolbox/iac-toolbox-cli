@@ -17,14 +17,19 @@ interface ObservabilityRemoteDialogProps {
 
 type Step = 'ask' | 'host' | 'prometheusPort' | 'lokiPort';
 
-export default function ObservabilityRemoteDialog({ onComplete }: ObservabilityRemoteDialogProps) {
+export default function ObservabilityRemoteDialog({
+  onComplete,
+}: ObservabilityRemoteDialogProps) {
   const [step, setStep] = useState<Step>('ask');
   const [host, setHost] = useState('');
   const [inputValue, setInputValue] = useState('');
 
   if (step === 'ask') {
     const options = [
-      { label: 'Yes — connect to an existing iac-toolbox DevOps server', value: 'yes' },
+      {
+        label: 'Yes — connect to an existing iac-toolbox DevOps server',
+        value: 'yes',
+      },
       { label: 'No — skip observability on this device', value: 'no' },
     ];
     return (
@@ -70,7 +75,9 @@ export default function ObservabilityRemoteDialog({ onComplete }: ObservabilityR
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold>◆ Prometheus port</Text>
-        <Box paddingLeft={3}><Text dimColor>Default: 9090</Text></Box>
+        <Box paddingLeft={3}>
+          <Text dimColor>Default: 9090</Text>
+        </Box>
         <Box paddingLeft={3} marginTop={1}>
           <TextInput
             value={inputValue}
@@ -89,7 +96,9 @@ export default function ObservabilityRemoteDialog({ onComplete }: ObservabilityR
   return (
     <Box flexDirection="column" paddingY={1}>
       <Text bold>◆ Loki port</Text>
-      <Box paddingLeft={3}><Text dimColor>Default: 3100</Text></Box>
+      <Box paddingLeft={3}>
+        <Text dimColor>Default: 3100</Text>
+      </Box>
       <Box paddingLeft={3} marginTop={1}>
         <TextInput
           value={inputValue}

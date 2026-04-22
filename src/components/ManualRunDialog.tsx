@@ -12,9 +12,7 @@ interface ManualRunDialogProps {
  * Shown when the user declines to install immediately.
  * Displays the equivalent bash command and required environment variables.
  */
-export default function ManualRunDialog({
-  destination,
-}: ManualRunDialogProps) {
+export default function ManualRunDialog({ destination }: ManualRunDialogProps) {
   const command = getManualRunCommand(destination);
   const envVars = getRequiredEnvVars();
 
@@ -24,10 +22,18 @@ export default function ManualRunDialog({
       <Text>{'│'}</Text>
       <Text>{'│ To install manually, run:'}</Text>
       <Text>{'│'}</Text>
-      <Text>{'│   '}{command}</Text>
+      <Text>
+        {'│   '}
+        {command}
+      </Text>
       <Text>{'│'}</Text>
-      <Text>{'│ Ensure the following environment variables are set before running:'}</Text>
-      <Text>{'│ '}{envVars.join(', ')}</Text>
+      <Text>
+        {'│ Ensure the following environment variables are set before running:'}
+      </Text>
+      <Text>
+        {'│ '}
+        {envVars.join(', ')}
+      </Text>
       <Text>{'└'}</Text>
     </Box>
   );

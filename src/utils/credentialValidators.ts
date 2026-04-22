@@ -8,7 +8,9 @@ export interface ValidationResult {
 /**
  * Validate a Docker Hub token by querying the Docker Hub API.
  */
-async function validateDockerHubToken(token: string): Promise<ValidationResult> {
+async function validateDockerHubToken(
+  token: string
+): Promise<ValidationResult> {
   try {
     // Use the repositories endpoint with the PAT as bearer token
     const repoRes = await fetch('https://hub.docker.com/v2/repositories/', {
@@ -66,13 +68,16 @@ async function validateCloudflareToken(
   token: string
 ): Promise<ValidationResult> {
   try {
-    const res = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await fetch(
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
 
     if (res.ok) {
       const data = (await res.json()) as { success?: boolean };
@@ -120,8 +125,7 @@ async function validateVaultToken(token: string): Promise<ValidationResult> {
  */
 async function validateGrafanaApiKey(key: string): Promise<ValidationResult> {
   try {
-    const grafanaUrl =
-      process.env['GRAFANA_URL'] || 'http://127.0.0.1:3000';
+    const grafanaUrl = process.env['GRAFANA_URL'] || 'http://127.0.0.1:3000';
     const res = await fetch(`${grafanaUrl}/api/org/`, {
       headers: { Authorization: `Bearer ${key}` },
       signal: AbortSignal.timeout(5000),

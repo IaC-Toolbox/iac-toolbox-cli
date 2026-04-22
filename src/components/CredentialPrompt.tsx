@@ -36,7 +36,9 @@ export default function CredentialPrompt({
   profile = 'default',
   onComplete,
 }: CredentialPromptProps) {
-  const [existing] = useState<CredentialProfile>(() => loadCredentials(profile));
+  const [existing] = useState<CredentialProfile>(() =>
+    loadCredentials(profile)
+  );
 
   const [phase, setPhase] = useState<PromptPhase>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,7 +68,7 @@ export default function CredentialPrompt({
       saveCredentials(collected, profile);
     }
     onComplete(collected);
-  }, [currentIndex]);
+  }, [currentIndex, collected, profile, onComplete]);
 
   // Phase: intro — ask whether to configure credentials
   if (phase === 'intro') {
@@ -86,9 +88,7 @@ export default function CredentialPrompt({
 
     return (
       <Box flexDirection="column" paddingY={1}>
-        <Text bold>
-          ◆ Configure credentials?
-        </Text>
+        <Text bold>◆ Configure credentials?</Text>
         <Box paddingLeft={3}>
           <Text dimColor>
             (Stored in ~/.iac-toolbox/credentials, never committed)
@@ -109,9 +109,7 @@ export default function CredentialPrompt({
           ◆ Credentials saved to ~/.iac-toolbox/credentials
         </Text>
         <Box paddingLeft={3}>
-          <Text dimColor>
-            (Profile: {profile}, permissions: 600)
-          </Text>
+          <Text dimColor>(Profile: {profile}, permissions: 600)</Text>
         </Box>
       </Box>
     );
@@ -140,9 +138,7 @@ export default function CredentialPrompt({
     return (
       <Box flexDirection="column" paddingY={1}>
         {validationResult.valid ? (
-          <Text color="green">
-            ✔ {validationResult.message}
-          </Text>
+          <Text color="green">✔ {validationResult.message}</Text>
         ) : (
           <Text color="yellow">
             ⚠ {validationResult.message} (saved anyway)
@@ -198,14 +194,10 @@ export default function CredentialPrompt({
         ◆ {description} ({currentIndex + 1}/{credentialKeyList.length})
       </Text>
       <Box paddingLeft={3}>
-        <Text dimColor>
-          (Key: {currentKey})
-        </Text>
+        <Text dimColor>(Key: {currentKey})</Text>
       </Box>
       <Box paddingLeft={3}>
-        <Text dimColor>
-          (Current: {displayExisting} — press Enter to keep)
-        </Text>
+        <Text dimColor>(Current: {displayExisting} — press Enter to keep)</Text>
       </Box>
       <Box paddingLeft={3} marginTop={1}>
         <TextInput

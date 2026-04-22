@@ -4,7 +4,6 @@ import type { InstallResult } from '../utils/installRunner.js';
 interface InstallCompleteDialogProps {
   result: InstallResult;
   selectedIntegrations: string[];
-  destination: string;
 }
 
 /**
@@ -15,7 +14,6 @@ interface InstallCompleteDialogProps {
 export default function InstallCompleteDialog({
   result,
   selectedIntegrations,
-  destination,
 }: InstallCompleteDialogProps) {
   if (result.success) {
     return (
@@ -29,9 +27,7 @@ export default function InstallCompleteDialog({
           <Text>{'│ ✓ GitHub Build Workflow ready'}</Text>
         )}
         <Text>{'│'}</Text>
-        <Text>
-          {'│ Run `iac-toolbox status` to verify your setup'}
-        </Text>
+        <Text>{'│ Run `iac-toolbox status` to verify your setup'}</Text>
         <Text>{'└'}</Text>
       </Box>
     );
@@ -48,17 +44,23 @@ export default function InstallCompleteDialog({
         {'│ Exit code: '}
         {result.exitCode ?? 'unknown'}
       </Text>
-      {result.lastErrorLine && (
+      {result.errorLines && result.errorLines.length > 0 ? (
+        <>
+          <Text>{'│'}</Text>
+          <Text>{'│ Error details:'}</Text>
+          {result.errorLines.map((line, index) => (
+            <Text key={index}>
+              {'│   '}
+              {line}
+            </Text>
+          ))}
+        </>
+      ) : result.lastErrorLine ? (
         <Text>
           {'│ Error: '}
           {result.lastErrorLine}
         </Text>
-      )}
-      <Text>{'│'}</Text>
-      <Text>
-        {'│ Full log available at: '}
-        {destination}/install.log
-      </Text>
+      ) : null}
       <Text>{'└'}</Text>
     </Box>
   );

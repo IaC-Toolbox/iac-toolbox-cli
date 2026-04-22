@@ -62,25 +62,37 @@ const cloudflare = program
 cloudflare
   .command('install')
   .description('Install or reinstall Cloudflare Tunnel')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const { loadCredentials } = require('./utils/credentials.js');
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
     const creds = loadCredentials('default');
-    const env = { ...process.env, CLOUDFLARE_API_TOKEN: creds.cloudflare_api_token || '' };
-    const result = spawnSync('bash', ['infrastructure/scripts/install.sh', '--cloudflared', '--local'], {
-      env, stdio: 'inherit',
-    });
+    const env = {
+      ...process.env,
+      CLOUDFLARE_API_TOKEN: creds.cloudflare_api_token || '',
+    };
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--cloudflared', '--local'],
+      {
+        env,
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 
 cloudflare
   .command('uninstall')
   .description('Remove Cloudflare Tunnel from this device')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('bash', ['infrastructure/scripts/uninstall-cloudflare.sh', '--local'], {
-      stdio: 'inherit',
-    });
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-cloudflare.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 
@@ -91,22 +103,30 @@ const vault = program
 vault
   .command('install')
   .description('Install or reinstall HashiCorp Vault')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('bash', ['infrastructure/scripts/install.sh', '--vault', '--local'], {
-      stdio: 'inherit',
-    });
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--vault', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 
 vault
   .command('uninstall')
   .description('Remove HashiCorp Vault from this device')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('bash', ['infrastructure/scripts/uninstall-vault.sh', '--local'], {
-      stdio: 'inherit',
-    });
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-vault.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 
@@ -117,25 +137,37 @@ const grafana = program
 grafana
   .command('install')
   .description('Install or reinstall Grafana observability stack')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const { loadCredentials } = require('./utils/credentials.js');
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
     const creds = loadCredentials('default');
-    const env = { ...process.env, GRAFANA_ADMIN_PASSWORD: creds.grafana_admin_password || '' };
-    const result = spawnSync('bash', ['infrastructure/scripts/install.sh', '--ansible-only', '--local'], {
-      env, stdio: 'inherit',
-    });
+    const env = {
+      ...process.env,
+      GRAFANA_ADMIN_PASSWORD: creds.grafana_admin_password || '',
+    };
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--ansible-only', '--local'],
+      {
+        env,
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 
 grafana
   .command('uninstall')
   .description('Remove Grafana and all observability data')
-  .action(() => {
-    const { spawnSync } = require('child_process');
-    const result = spawnSync('bash', ['infrastructure/scripts/uninstall-loki.sh', '--local'], {
-      stdio: 'inherit',
-    });
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-loki.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
     process.exit(result.status ?? 1);
   });
 

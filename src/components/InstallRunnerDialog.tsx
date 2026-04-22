@@ -39,12 +39,15 @@ export default function InstallRunnerDialog({
     if (!installScriptExists(destination)) {
       setRunning(false);
       setError(
-        `install.sh not found at ${destination}/scripts/install.sh. Try re-running \`iac-toolbox init\`.`,
+        `install.sh not found at ${destination}/scripts/install.sh. Try re-running \`iac-toolbox init\`.`
       );
       onComplete({
         success: false,
         exitCode: 1,
         lastErrorLine: `install.sh not found at ${destination}/scripts/install.sh`,
+        errorLines: [
+          `install.sh not found at ${destination}/scripts/install.sh`,
+        ],
       });
       return;
     }
@@ -70,7 +73,10 @@ export default function InstallRunnerDialog({
           {'◆ Install failed'}
         </Text>
         <Text>{'│'}</Text>
-        <Text>{'│ '}{error}</Text>
+        <Text>
+          {'│ '}
+          {error}
+        </Text>
         <Text>{'└'}</Text>
       </Box>
     );
@@ -88,7 +94,7 @@ export default function InstallRunnerDialog({
         {running && <Spinner type="dots" />}
       </Text>
       <Text>{'│'}</Text>
-      <Text dimColor>{'│ Output from install.sh is streamed below:'}</Text>
+      <Text dimColor>{'│ (Output is written to your terminal)'}</Text>
       <Text>{'│'}</Text>
     </Box>
   );
