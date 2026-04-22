@@ -14,12 +14,12 @@ Add a new `iac-toolbox install` CLI command that executes the install step direc
 
 ## What Changes
 
-| Area                 | Change                                                                 |
-| -------------------- | ---------------------------------------------------------------------- |
-| CLI                  | Add `install` command to commander program                             |
-| Install runner logic | Extract destination path from iac-toolbox.yml or use default/flag      |
-| Error handling       | Surface errors when config files are missing or invalid                |
-| Documentation        | Update CLI help text and manual run instructions to reference command  |
+| Area                 | Change                                                                |
+| -------------------- | --------------------------------------------------------------------- |
+| CLI                  | Add `install` command to commander program                            |
+| Install runner logic | Extract destination path from iac-toolbox.yml or use default/flag     |
+| Error handling       | Surface errors when config files are missing or invalid               |
+| Documentation        | Update CLI help text and manual run instructions to reference command |
 
 ---
 
@@ -113,14 +113,14 @@ iac-toolbox install --destination /opt/homelab/infrastructure
 
 ## Error Handling
 
-| Scenario                             | Exit Code | Message                                                                                |
-| ------------------------------------ | --------- | -------------------------------------------------------------------------------------- |
-| iac-toolbox.yml not found            | 1         | `Configuration file not found at <destination>/iac-toolbox.yml. Run 'iac-toolbox init' first.` |
-| install.sh not found                 | 1         | `install.sh not found at <destination>/scripts/install.sh. Ensure infrastructure files are present.` |
-| Missing credentials (non-fatal)      | 0*        | Warning printed to stderr, install.sh decides whether to fail                          |
-| install.sh fails                     | N         | Exit with install.sh's exit code, last stderr lines shown (via existing logic)        |
+| Scenario                        | Exit Code | Message                                                                                              |
+| ------------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
+| iac-toolbox.yml not found       | 1         | `Configuration file not found at <destination>/iac-toolbox.yml. Run 'iac-toolbox init' first.`       |
+| install.sh not found            | 1         | `install.sh not found at <destination>/scripts/install.sh. Ensure infrastructure files are present.` |
+| Missing credentials (non-fatal) | 0\*       | Warning printed to stderr, install.sh decides whether to fail                                        |
+| install.sh fails                | N         | Exit with install.sh's exit code, last stderr lines shown (via existing logic)                       |
 
-*Note: Missing credentials are passed as empty strings to install.sh. The install script itself validates required environment variables and fails if needed. The CLI does not pre-validate credentials to avoid duplicating validation logic.
+\*Note: Missing credentials are passed as empty strings to install.sh. The install script itself validates required environment variables and fails if needed. The CLI does not pre-validate credentials to avoid duplicating validation logic.
 
 ---
 

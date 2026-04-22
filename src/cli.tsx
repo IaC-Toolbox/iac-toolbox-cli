@@ -172,6 +172,22 @@ grafana
   });
 
 program
+  .command('install')
+  .description('Run install script using existing configuration')
+  .option('--profile <name>', 'Credential profile to use', 'default')
+  .option(
+    '--destination <path>',
+    'Path to infrastructure directory',
+    'infrastructure'
+  )
+  .action(async (options: { profile: string; destination: string }) => {
+    const { runStandaloneInstall } = await import(
+      './utils/standaloneInstall.js'
+    );
+    await runStandaloneInstall(options.destination, options.profile);
+  });
+
+program
   .command('uninstall')
   .description('Remove the previously installed infra')
   .action(() => {
