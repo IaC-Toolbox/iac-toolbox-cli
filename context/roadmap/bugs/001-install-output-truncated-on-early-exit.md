@@ -98,5 +98,6 @@ bash infrastructure/scripts/install.sh --ansible-only --local
 ```
 
 Also verify success case still works:
+
 - Complete wizard with all credentials
 - Verify install output streams correctly during execution
