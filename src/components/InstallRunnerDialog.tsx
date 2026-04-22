@@ -1,5 +1,5 @@
 import { Box, Text } from 'ink';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Spinner from 'ink-spinner';
 import {
   buildInstallEnv,
@@ -7,6 +7,7 @@ import {
   installScriptExists,
 } from '../utils/installRunner.js';
 import type { InstallResult } from '../utils/installRunner.js';
+import { useInstallInput } from '../hooks/useInstallInput.js';
 
 interface InstallRunnerDialogProps {
   destination: string;
@@ -14,13 +15,26 @@ interface InstallRunnerDialogProps {
   dockerHubUsername?: string;
   dockerImageName?: string;
   onComplete: (result: InstallResult) => void;
+  /** Injectable for testing — defaults to the real installScriptExists */
+  _installScriptExists?: (dest: string) => boolean;
+  /** Injectable for testing — defaults to the real runInstallScript */
+  _runInstallScript?: (
+    dest: string,
+    env: Record<string, string>,
+    onLine?: (line: string) => void
+  ) => Promise<InstallResult>;
+  /** Injectable for testing — defaults to useInstallInput */
+  _useInstallInput?: (onKey: (() => void) | null) => void;
 }
 
 /**
- * Live install screen that spawns install.sh and streams output to the terminal.
+ * Live install screen that spawns install.sh and captures all output lines
+ * into the React/Ink tree.
  *
- * Shows a spinner while the script runs, then calls onComplete with the result.
- * If install.sh is not found, shows an inline error immediately.
+ * - While running: shows a spinner and streams output lines inline.
+ * - On success (exit 0): calls onComplete immediately so the wizard advances.
+ * - On failure (non-zero exit): renders an error banner below the captured
+ *   output and waits for the user to press any key before calling onComplete.
  */
 export default function InstallRunnerDialog({
   destination,
@@ -28,19 +42,26 @@ export default function InstallRunnerDialog({
   dockerHubUsername,
   dockerImageName,
   onComplete,
+  _installScriptExists = installScriptExists,
+  _runInstallScript = runInstallScript,
+  _useInstallInput = useInstallInput,
 }: InstallRunnerDialogProps) {
   const [running, setRunning] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [outputLines, setOutputLines] = useState<string[]>([]);
+  const [result, setResult] = useState<InstallResult | null>(null);
+  const [initError, setInitError] = useState<string | null>(null);
+
+  const addLine = useCallback((line: string) => {
+    setOutputLines((prev) => [...prev, line]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    // Check script exists before spawning
-    if (!installScriptExists(destination)) {
+    if (!_installScriptExists(destination)) {
+      const msg = `install.sh not found at ${destination}/scripts/install.sh. Try re-running \`iac-toolbox init\`.`;
       setRunning(false);
-      setError(
-        `install.sh not found at ${destination}/scripts/install.sh. Try re-running \`iac-toolbox init\`.`
-      );
+      setInitError(msg);
       onComplete({
         success: false,
         exitCode: 1,
@@ -54,19 +75,45 @@ export default function InstallRunnerDialog({
 
     const env = buildInstallEnv(profile, dockerHubUsername, dockerImageName);
 
-    runInstallScript(destination, env).then((result) => {
+    _runInstallScript(destination, env, (line) => {
+      if (!cancelled) {
+        addLine(line);
+      }
+    }).then((res) => {
       if (!cancelled) {
         setRunning(false);
-        onComplete(result);
+        if (res.success) {
+          onComplete(res);
+        } else {
+          setResult(res);
+        }
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [destination, profile, dockerHubUsername, dockerImageName, onComplete]);
+  }, [
+    destination,
+    profile,
+    dockerHubUsername,
+    dockerImageName,
+    onComplete,
+    addLine,
+    _installScriptExists,
+    _runInstallScript,
+  ]);
 
-  if (error) {
+  // Wait for key press on failure before advancing.
+  _useInstallInput(
+    result && !result.success
+      ? () => {
+          onComplete(result);
+        }
+      : null
+  );
+
+  if (initError) {
     return (
       <Box flexDirection="column" paddingY={1}>
         <Text bold color="red">
@@ -75,7 +122,7 @@ export default function InstallRunnerDialog({
         <Text>{'│'}</Text>
         <Text>
           {'│ '}
-          {error}
+          {initError}
         </Text>
         <Text>{'└'}</Text>
       </Box>
@@ -94,7 +141,30 @@ export default function InstallRunnerDialog({
         {running && <Spinner type="dots" />}
       </Text>
       <Text>{'│'}</Text>
-      <Text dimColor>{'│ (Output is written to your terminal)'}</Text>
+      {outputLines.map((line, i) => (
+        <Text key={i} dimColor>
+          {'│ '}
+          {line}
+        </Text>
+      ))}
+      {result && !result.success && (
+        <>
+          <Text>{'│'}</Text>
+          <Text bold color="red">
+            {'│ ✗ Install failed (exit code '}
+            {result.exitCode}
+            {')'}
+          </Text>
+          {result.lastErrorLine && (
+            <Text color="red">
+              {'│   '}
+              {result.lastErrorLine}
+            </Text>
+          )}
+          <Text>{'│'}</Text>
+          <Text dimColor>{'│ Press any key to continue...'}</Text>
+        </>
+      )}
       <Text>{'│'}</Text>
     </Box>
   );
