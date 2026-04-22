@@ -26,5 +26,10 @@ export default {
       statements: 7,
     },
   },
-  testPathIgnorePatterns: ['/node_modules/', '/dist/', '/.claude/context/', '/.claude/worktrees/.*\\.claude/'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/.claude/context/',
+    '/.claude/worktrees/.*\\.claude/',
+  ],
 };
