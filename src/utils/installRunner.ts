@@ -153,12 +153,17 @@ export function runInstallScript(
 
     child.on('error', (err) => {
       process.removeListener('SIGINT', sigintHandler);
-      resolve({
-        success: false,
-        exitCode: 1,
-        lastErrorLine: err.message,
-        errorLines: [err.message],
-      });
+      // Wait for stdio buffers to fully flush before resolving.
+      // Apply the same delay as the 'close' handler to ensure any
+      // buffered output is written before the UI transitions.
+      setTimeout(() => {
+        resolve({
+          success: false,
+          exitCode: 1,
+          lastErrorLine: err.message,
+          errorLines: [err.message],
+        });
+      }, 100);
     });
   });
 }
