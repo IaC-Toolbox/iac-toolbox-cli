@@ -8,13 +8,32 @@
 
 set -e
 
+# Setup logging
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+LOG_FILE="$PROJECT_ROOT/install.log"
+
+# Function to log messages to both console and file
+log() {
+  echo "$@" | tee -a "$LOG_FILE"
+}
+
+# Redirect all output to log file
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Trap errors and show log location
+trap 'echo -e "\n${RED}Installation failed. Check the log for details:${NC}"; echo -e "${YELLOW}$LOG_FILE${NC}"; exit 1' ERR
+
+log "========================================="
+log "Install script started at $(date)"
+log "Log file: $LOG_FILE"
+log "========================================="
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 ANSIBLE_DIR="$PROJECT_ROOT/ansible-configurations"
 TERRAFORM_DIR="$PROJECT_ROOT/terraform/grafana-alerts"
 
@@ -86,55 +105,47 @@ if [ "$(echo "$RPI_LOCAL_MODE" | tr '[:upper:]' '[:lower:]')" = "true" ] || [ "$
 fi
 echo ""
 
-echo -e "${YELLOW}[1/7] Checking required tools...${NC}"
-REQUIRED_COMMANDS=(openssl)
-for cmd in "${REQUIRED_COMMANDS[@]}"; do
-  if ! command -v "$cmd" >/dev/null 2>&1; then
-    echo -e "${RED}Error: Required command not found: $cmd${NC}"
-    exit 1
-  fi
-done
-
-echo -e "${GREEN}✓ Core tools found${NC}"
-
+echo -e "${YELLOW}[1/4] Checking required tools...${NC}"
 if [ "$RUN_ANSIBLE" = true ]; then
   if ! command -v ansible-playbook >/dev/null 2>&1; then
     echo -e "${RED}Error: ansible-playbook is not installed${NC}"
+    echo -e "${RED}Please install Ansible first:${NC}"
+    echo -e "${YELLOW}  macOS: brew install ansible${NC}"
+    echo -e "${YELLOW}  Linux: sudo apt install ansible${NC}"
+    echo ""
+    echo -e "${YELLOW}Full log available at: $LOG_FILE${NC}"
     exit 1
   fi
-  echo -e "${GREEN}✓ Ansible found${NC}"
+  ANSIBLE_VERSION=$(ansible-playbook --version | head -n1)
+  echo -e "${GREEN}✓ Ansible found: $ANSIBLE_VERSION${NC}"
 fi
 
 if [ "$RUN_TERRAFORM" = true ]; then
   if ! command -v terraform >/dev/null 2>&1; then
     echo -e "${RED}Error: terraform is not installed${NC}"
+    echo -e "${RED}Please install Terraform first:${NC}"
+    echo -e "${YELLOW}  macOS: brew install terraform${NC}"
+    echo -e "${YELLOW}  Linux: wget https://releases.hashicorp.com/terraform/...${NC}"
+    echo ""
+    echo -e "${YELLOW}Full log available at: $LOG_FILE${NC}"
     exit 1
   fi
-  echo -e "${GREEN}✓ Terraform found${NC}"
+  TERRAFORM_VERSION=$(terraform version -json | grep -o '"terraform_version":"[^"]*"' | cut -d'"' -f4)
+  echo -e "${GREEN}✓ Terraform found: v$TERRAFORM_VERSION${NC}"
 fi
 echo ""
 
-echo -e "${YELLOW}[2/7] Checking environment configuration...${NC}"
-if [ ! -f "$PROJECT_ROOT/.env" ]; then
-  echo -e "${RED}Error: .env file not found${NC}"
-  echo "Please create $PROJECT_ROOT/.env from ansible-configurations/.env.example or your own config"
-  exit 1
-fi
-
-set -a
-source "$PROJECT_ROOT/.env"
-set +a
-
+echo -e "${YELLOW}[2/4] Checking environment configuration...${NC}"
 if [ "$(echo "$RPI_LOCAL_MODE" | tr '[:upper:]' '[:lower:]')" = "true" ] || [ "$RPI_LOCAL_MODE" = "1" ] || [ "$(echo "$RPI_LOCAL_MODE" | tr '[:upper:]' '[:lower:]')" = "yes" ] || [ "$(echo "$RPI_LOCAL_MODE" | tr '[:upper:]' '[:lower:]')" = "on" ]; then
   export RPI_LOCAL=true
 else
   export RPI_LOCAL=false
 fi
 
-echo -e "${GREEN}✓ .env file found${NC}"
+echo -e "${GREEN}✓ Environment configured${NC}"
 echo ""
 
-echo -e "${YELLOW}[3/7] Validating required environment variables...${NC}"
+echo -e "${YELLOW}[3/4] Validating required environment variables...${NC}"
 REQUIRED_VARS=("RPI_HOST" "RPI_USER")
 if [ "$RUN_ANSIBLE" = true ] && [ "$ANSIBLE_TAGS" != "vault" ]; then
   REQUIRED_VARS+=("GITHUB_REPO_URL" "GITHUB_RUNNER_TOKEN")
@@ -152,81 +163,73 @@ if [ ${#MISSING_VARS[@]} -gt 0 ]; then
   for var in "${MISSING_VARS[@]}"; do
     echo "  - $var"
   done
+  echo ""
+  echo -e "${YELLOW}Full log available at: $LOG_FILE${NC}"
   exit 1
 fi
 
 echo -e "${GREEN}✓ Required variables present${NC}"
 echo ""
 
-echo -e "${YELLOW}[4/7] Installing required Ansible collections...${NC}"
-if [ "$RUN_ANSIBLE" = true ] && [ -f "$ANSIBLE_DIR/requirements.yml" ]; then
-  (
-    cd "$ANSIBLE_DIR"
-    ansible-galaxy collection install -r requirements.yml
-  )
-  echo -e "${GREEN}✓ Ansible collections ready${NC}"
-else
-  echo -e "${GREEN}✓ No Ansible collections to install${NC}"
-fi
-echo ""
-
-echo -e "${YELLOW}[5/7] Ensuring Ansible Vault password exists...${NC}"
-VAULT_PASS_FILE="$ANSIBLE_DIR/.vault_pass.txt"
-if [ ! -f "$VAULT_PASS_FILE" ]; then
-  echo "Generating vault password..."
-  openssl rand -base64 32 > "$VAULT_PASS_FILE"
-  chmod 600 "$VAULT_PASS_FILE"
-  echo -e "${GREEN}✓ Vault password generated${NC}"
-else
-  echo -e "${GREEN}✓ Vault password already exists${NC}"
-fi
-echo ""
-
-echo -e "${YELLOW}[6/7] Ensuring encrypted secrets exist...${NC}"
-if [ ! -f "$ANSIBLE_DIR/secrets.yml" ]; then
-  echo "Creating encrypted secrets..."
-  (
-    cd "$ANSIBLE_DIR"
-    ansible-playbook playbooks/seed_vault.yml
-  )
-  echo -e "${GREEN}✓ Secrets encrypted${NC}"
-else
-  echo -e "${GREEN}✓ Encrypted secrets already exist${NC}"
-fi
-echo ""
-
 if [ "$RUN_ANSIBLE" = true ]; then
-  echo -e "${YELLOW}[7/7] Running Ansible playbook...${NC}"
+  echo -e "${YELLOW}[4/4] Running Ansible playbook...${NC}"
   if [ "$RPI_LOCAL" = true ]; then
     echo -e "${YELLOW}Target: local machine as $RPI_USER${NC}"
   else
     echo -e "${YELLOW}Target: $RPI_USER@$RPI_HOST${NC}"
   fi
 
-  ANSIBLE_CMD=(ansible-playbook -i inventory/all.yml playbooks/main.yml --vault-password-file "$VAULT_PASS_FILE")
+  # Build secret variables from environment (injected by CLI from ~/.iac-toolbox/credentials)
+  SECRET_VARS=""
+  SECRET_ENV_NAMES=(
+    DOCKER_HUB_TOKEN DOCKER_HUB_USERNAME
+    CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_ZONE_ID
+    GRAFANA_ADMIN_PASSWORD
+    GITHUB_RUNNER_TOKEN GITHUB_REPO_URL
+  )
+  for var_name in "${SECRET_ENV_NAMES[@]}"; do
+    if [ -n "${!var_name}" ]; then
+      SECRET_VARS="${SECRET_VARS} ${var_name}=${!var_name}"
+    fi
+  done
+
+  ANSIBLE_CMD=(ansible-playbook -i inventory/all.yml playbooks/main.yml)
+  if [ -f "$ANSIBLE_DIR/iac-toolbox.yml" ]; then
+    ANSIBLE_CMD+=(--extra-vars "@iac-toolbox.yml")
+  fi
+  if [ -n "$SECRET_VARS" ]; then
+    ANSIBLE_CMD+=(--extra-vars "$SECRET_VARS")
+  fi
   if [ -n "$ANSIBLE_TAGS" ]; then
     ANSIBLE_CMD+=(--tags "$ANSIBLE_TAGS")
   fi
 
   (
-    cd "$ANSIBLE_DIR"
-    "${ANSIBLE_CMD[@]}"
+    cd "$ANSIBLE_DIR" || exit 1
+    echo "Running: ${ANSIBLE_CMD[*]}"
+    if ! "${ANSIBLE_CMD[@]}"; then
+      echo -e "${RED}Ansible playbook failed${NC}"
+      echo -e "${YELLOW}Full log available at: $LOG_FILE${NC}"
+      exit 1
+    fi
   )
   echo -e "${GREEN}✓ Ansible run completed${NC}"
 else
-  echo -e "${YELLOW}[7/7] Skipping Ansible playbook (--terraform-only)${NC}"
+  echo -e "${YELLOW}[4/4] Skipping Ansible playbook (--terraform-only)${NC}"
 fi
 echo ""
 
 if [ "$RUN_TERRAFORM" = true ]; then
-  echo -e "${YELLOW}[7/7] Running Terraform...${NC}"
+  echo -e "${YELLOW}Running Terraform...${NC}"
 
   if [ -z "$GRAFANA_ADMIN_USER" ] || [ -z "$GRAFANA_ADMIN_PASSWORD" ] || [ -z "$ALERT_EMAIL" ]; then
     echo -e "${RED}Error: Missing required variables for Terraform${NC}"
-    echo "Please ensure these are set in $PROJECT_ROOT/.env:"
+    echo "Please ensure these environment variables are set:"
     echo "  - GRAFANA_ADMIN_USER"
     echo "  - GRAFANA_ADMIN_PASSWORD"
     echo "  - ALERT_EMAIL"
+    echo ""
+    echo -e "${YELLOW}Full log available at: $LOG_FILE${NC}"
     exit 1
   fi
 
@@ -247,10 +250,12 @@ EOF
 
   echo -e "${GREEN}✓ Terraform completed${NC}"
 else
-  echo -e "${YELLOW}[7/7] Skipping Terraform execution${NC}"
+  echo -e "${YELLOW}Skipping Terraform execution${NC}"
 fi
 
 echo ""
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Install completed successfully${NC}"
 echo -e "${GREEN}========================================${NC}"
+echo ""
+log "Install script completed successfully at $(date)"

@@ -2,9 +2,6 @@
 - name: Setup Raspberry Pi Infrastructure
   hosts: all
   become: true
-  vars_files:
-    - ../secrets.yml
-
   pre_tasks:
     - name: Validate connection to Raspberry Pi
       ping:
@@ -18,7 +15,7 @@
 
     - name: Display Python version
       debug:
-        msg: 'Python {{ python_version.stdout }} is installed'
+        msg: "Python {{ python_version.stdout }} is installed"
       tags: always
 
     - name: Verify required variables are defined
@@ -26,7 +23,7 @@
         that:
           - ansible_host is defined
           - ansible_user is defined
-        fail_msg: 'Required connection variables are missing. Check inventory configuration.'
+        fail_msg: "Required connection variables are missing. Check inventory configuration."
       tags: always
 
     - name: Gather system facts
@@ -47,8 +44,8 @@
         msg:
           target: "{{ ansible_host | default('local') }}"
           connection: "{{ ansible_connection | default('ssh') }}"
-          vault_enabled: '{{ vault.enabled | default(false) }}'
-          loki_enabled: '{{ loki.enabled | default(false) }}'
+          vault_enabled: "{{ vault.enabled | default(false) }}"
+          loki_enabled: "{{ loki.enabled | default(false) }}"
       tags: always
 
   roles:

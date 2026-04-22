@@ -93,23 +93,21 @@ export function runInstallScript(
       return;
     }
 
-    let lastStderrLine = '';
+    let lastErrorLines: string[] = [];
 
     const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
       env,
       stdio: ['inherit', 'inherit', 'pipe'],
     });
 
-    // Capture stderr to get last error line on failure
+    // Capture stderr to get last error lines on failure
     child.stderr?.on('data', (data: Buffer) => {
       const text = data.toString();
       // Also pipe stderr to terminal
       process.stderr.write(text);
-      const lines = text.trim().split('\n');
-      const lastLine = lines[lines.length - 1];
-      if (lastLine) {
-        lastStderrLine = lastLine;
-      }
+      const lines = text.trim().split('\n').filter(line => line.length > 0);
+      // Keep last 5 error lines
+      lastErrorLines = lastErrorLines.concat(lines).slice(-5);
     });
 
     const sigintHandler = () => {
@@ -119,10 +117,20 @@ export function runInstallScript(
 
     child.on('close', (code) => {
       process.removeListener('SIGINT', sigintHandler);
+
+      // Join last error lines, preferring ones with "Error:" or "failed"
+      let errorMessage = null;
+      if (code !== 0 && lastErrorLines.length > 0) {
+        const criticalErrors = lastErrorLines.filter(line =>
+          line.includes('Error:') || line.includes('failed') || line.includes('FAILED')
+        );
+        errorMessage = (criticalErrors.length > 0 ? criticalErrors : lastErrorLines).join(' | ');
+      }
+
       resolve({
         success: code === 0,
         exitCode: code,
-        lastErrorLine: code !== 0 ? lastStderrLine || null : null,
+        lastErrorLine: errorMessage,
       });
     });
 
