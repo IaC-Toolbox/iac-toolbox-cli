@@ -1,294 +1,232 @@
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
-import SelectInput from 'ink-select-input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-interface CloudflareConfig {
+export interface CloudflareConfig {
   enabled: boolean;
-  mode?: 'oauth' | 'api';
-  domain?: string;
-  token?: string;
-  accountId?: string;
-  zoneId?: string;
-  tunnelName?: string;
-  services?: ServiceMapping[];
-}
-
-interface ServiceMapping {
-  subdomain: string;
-  port: number;
-  hostname?: string;
+  mode: 'api';
+  token: string;
+  accountId: string;
+  zoneId: string;
+  zoneName: string;
+  tunnelName: string;
+  hostname: string;
+  servicePort: number;
 }
 
 interface CloudflareConfigDialogProps {
-  existingConfig?: Partial<CloudflareConfig>;
   onComplete: (config: CloudflareConfig) => void;
 }
 
 type Step =
-  | 'enable'
-  | 'mode'
-  | 'domain'
   | 'token'
   | 'accountId'
   | 'zoneId'
   | 'tunnelName'
-  | 'services'
-  | 'customService';
+  | 'hostname'
+  | 'servicePort';
 
-interface SelectOption {
-  label: string;
-  value: string;
+async function validateToken(
+  token: string
+): Promise<{ valid: boolean; message: string }> {
+  try {
+    const res = await fetch(
+      'https://api.cloudflare.com/client/v4/user/tokens/verify',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    if (res.ok) {
+      const data = (await res.json()) as { success?: boolean };
+      if (data.success) return { valid: true, message: 'Token validated' };
+    }
+    return { valid: false, message: `Invalid token (status ${res.status})` };
+  } catch {
+    return { valid: false, message: 'Connection failed' };
+  }
+}
+
+async function validateZone(
+  token: string,
+  zoneId: string
+): Promise<{ valid: boolean; zoneName: string; message: string }> {
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${zoneId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000),
+      }
+    );
+    if (res.ok) {
+      const data = (await res.json()) as {
+        success?: boolean;
+        result?: { name?: string };
+      };
+      if (data.success && data.result?.name) {
+        return {
+          valid: true,
+          zoneName: data.result.name,
+          message: `Zone verified: ${data.result.name}`,
+        };
+      }
+    }
+    return {
+      valid: false,
+      zoneName: '',
+      message: `Invalid zone (status ${res.status})`,
+    };
+  } catch {
+    return { valid: false, zoneName: '', message: 'Connection failed' };
+  }
 }
 
 export default function CloudflareConfigDialog({
-  existingConfig,
   onComplete,
 }: CloudflareConfigDialogProps) {
-  const [step, setStep] = useState<Step>('enable');
-  const [mode, setMode] = useState<'oauth' | 'api'>(
-    existingConfig?.mode || 'api'
-  );
-  const [domain, setDomain] = useState(existingConfig?.domain || '');
-  const [token, setToken] = useState(existingConfig?.token || '');
-  const [accountId, setAccountId] = useState(existingConfig?.accountId || '');
-  const [zoneId, setZoneId] = useState(existingConfig?.zoneId || '');
-  const [tunnelName] = useState(
-    existingConfig?.tunnelName || 'main-backend-tunnel'
-  );
-  const [services] = useState<ServiceMapping[]>([
-    { subdomain: 'vault', port: 8200 },
-    { subdomain: 'grafana', port: 3000 },
-    { subdomain: 'alloy', port: 12345 },
-  ]);
+  const [step, setStep] = useState<Step>('token');
   const [inputValue, setInputValue] = useState('');
+  const [token, setToken] = useState('');
+  const [accountId, setAccountId] = useState('');
+  const [zoneId, setZoneId] = useState('');
+  const [zoneName, setZoneName] = useState('');
+  const [tunnelName, setTunnelName] = useState('');
+  const [hostname, setHostname] = useState('');
+  const [validating, setValidating] = useState(false);
+  const [validationMsg, setValidationMsg] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // Step 1: Enable/Skip
-  if (step === 'enable') {
-    const options: SelectOption[] = [
-      { label: 'Yes', value: 'yes' },
-      { label: 'No', value: 'no' },
-      { label: 'Skip for now', value: 'skip' },
-    ];
+  useEffect(() => {
+    if (!validating) return;
+    let cancelled = false;
 
-    const handleSelect = (item: SelectOption) => {
-      if (item.value === 'yes') {
-        setStep('mode');
-      } else {
-        onComplete({ enabled: false });
+    const run = async () => {
+      if (step === 'token') {
+        const result = await validateToken(inputValue.trim());
+        if (cancelled) return;
+        if (result.valid) {
+          setToken(inputValue.trim());
+          setValidationMsg(result.message);
+          setValidationError(null);
+          setValidating(false);
+          setInputValue('');
+          setStep('accountId');
+        } else {
+          setValidationError(result.message);
+          setValidating(false);
+        }
+      } else if (step === 'zoneId') {
+        const result = await validateZone(token, inputValue.trim());
+        if (cancelled) return;
+        if (result.valid) {
+          setZoneId(inputValue.trim());
+          setZoneName(result.zoneName);
+          setTunnelName(`${result.zoneName}-tunnel`);
+          setValidationMsg(result.message);
+          setValidationError(null);
+          setValidating(false);
+          setInputValue('');
+          setStep('tunnelName');
+        } else {
+          setValidationError(result.message);
+          setValidating(false);
+        }
       }
     };
 
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Expose services via Cloudflare Tunnel?</Text>
-        <Box paddingLeft={3}>
-          <SelectInput items={options} onSelect={handleSelect} />
-        </Box>
-      </Box>
-    );
-  }
-
-  // Step 2: Mode selection
-  if (step === 'mode') {
-    const options: SelectOption[] = [
-      { label: 'API Token (recommended)', value: 'api' },
-      { label: 'OAuth', value: 'oauth' },
-      { label: 'Skip for now', value: 'skip' },
-    ];
-
-    const handleSelect = (item: SelectOption) => {
-      if (item.value === 'skip') {
-        onComplete({ enabled: false });
-      } else {
-        setMode(item.value as 'oauth' | 'api');
-        setStep('domain');
-      }
+    run();
+    return () => {
+      cancelled = true;
     };
+  }, [validating, step, inputValue, token]);
 
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Choose authentication method</Text>
-        <Box paddingLeft={3}>
-          <SelectInput items={options} onSelect={handleSelect} />
-        </Box>
-      </Box>
-    );
-  }
+  const handleSubmit = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
 
-  // Step 3: Domain
-  if (step === 'domain') {
-    const handleSubmit = (value: string) => {
-      const finalDomain = value.trim() || domain;
-      setDomain(finalDomain);
-      setInputValue('');
-      if (mode === 'api') {
-        setStep('token');
-      } else {
-        setStep('tunnelName');
-      }
-    };
+    if (step === 'token' || step === 'zoneId') {
+      setValidationError(null);
+      setValidationMsg(null);
+      setValidating(true);
+      return;
+    }
 
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter your domain name</Text>
-        <Box paddingLeft={3}>
-          <Text dimColor>
-            (Current: {domain || 'not set'} - press Enter to keep)
-          </Text>
-        </Box>
-        <Box paddingLeft={3} marginTop={1}>
-          <TextInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleSubmit}
-          />
-        </Box>
-      </Box>
-    );
-  }
-
-  // Step 4: API Token (only for API mode)
-  if (step === 'token') {
-    const handleSubmit = (value: string) => {
-      const finalToken = value.trim() || token;
-      setToken(finalToken);
-      setInputValue('');
-      setStep('accountId');
-    };
-
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter Cloudflare API Token</Text>
-        <Box paddingLeft={3}>
-          <Text dimColor>
-            (Current: {token ? '***hidden***' : 'not set'} - press Enter to
-            keep)
-          </Text>
-        </Box>
-        <Box paddingLeft={3}>
-          <Text dimColor>
-            (Get from: Cloudflare &gt; My Profile &gt; API Tokens)
-          </Text>
-        </Box>
-        <Box paddingLeft={3} marginTop={1}>
-          <TextInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleSubmit}
-            mask="*"
-          />
-        </Box>
-      </Box>
-    );
-  }
-
-  // Step 5: Account ID
-  if (step === 'accountId') {
-    const handleSubmit = (value: string) => {
-      const finalAccountId = value.trim() || accountId;
-      setAccountId(finalAccountId);
+    if (step === 'accountId') {
+      setAccountId(trimmed);
       setInputValue('');
       setStep('zoneId');
-    };
-
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter Cloudflare Account ID</Text>
-        <Box paddingLeft={3}>
-          <Text dimColor>
-            (Current: {accountId || 'not set'} - press Enter to keep)
-          </Text>
-        </Box>
-        <Box paddingLeft={3}>
-          <Text dimColor>
-            (Found in: Cloudflare Dashboard &gt; Account Overview)
-          </Text>
-        </Box>
-        <Box paddingLeft={3} marginTop={1}>
-          <TextInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleSubmit}
-          />
-        </Box>
-      </Box>
-    );
-  }
-
-  // Step 6: Zone ID
-  if (step === 'zoneId') {
-    const handleSubmit = (value: string) => {
-      const finalZoneId = value.trim() || zoneId;
-      setZoneId(finalZoneId);
+    } else if (step === 'tunnelName') {
+      setTunnelName(trimmed);
       setInputValue('');
-      setStep('tunnelName');
-    };
+      setStep('hostname');
+    } else if (step === 'hostname') {
+      setHostname(trimmed);
+      setInputValue('');
+      setStep('servicePort');
+    } else if (step === 'servicePort') {
+      const port = parseInt(trimmed, 10);
+      if (isNaN(port)) return;
+      onComplete({
+        enabled: true,
+        mode: 'api',
+        token,
+        accountId,
+        zoneId,
+        zoneName,
+        tunnelName,
+        hostname,
+        servicePort: port,
+      });
+    }
+  };
 
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter Cloudflare Zone ID</Text>
+  const labels: Record<Step, string> = {
+    token: 'Cloudflare API token',
+    accountId: 'Cloudflare Account ID',
+    zoneId: 'Cloudflare Zone ID',
+    tunnelName: 'Tunnel name',
+    hostname: 'First domain to expose',
+    servicePort: `Service port for ${hostname || 'domain'}`,
+  };
+
+  return (
+    <Box flexDirection="column" paddingY={1}>
+      <Text bold>◆ {labels[step]}</Text>
+      {step === 'tunnelName' && (
         <Box paddingLeft={3}>
-          <Text dimColor>
-            (Current: {zoneId || 'not set'} - press Enter to keep)
-          </Text>
+          <Text dimColor>Default: {tunnelName}</Text>
         </Box>
+      )}
+      {validationMsg && (
         <Box paddingLeft={3}>
-          <Text dimColor>(Found in: Cloudflare &gt; Domain &gt; Overview)</Text>
+          <Text color="green">✔ {validationMsg}</Text>
         </Box>
-        <Box paddingLeft={3} marginTop={1}>
-          <TextInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleSubmit}
-          />
+      )}
+      {validationError && (
+        <Box paddingLeft={3}>
+          <Text color="red">✗ {validationError}</Text>
         </Box>
+      )}
+      {validating && (
+        <Box paddingLeft={3}>
+          <Text dimColor>Validating...</Text>
+        </Box>
+      )}
+      <Box paddingLeft={3} marginTop={1}>
+        <TextInput
+          value={inputValue}
+          onChange={setInputValue}
+          onSubmit={handleSubmit}
+          mask={step === 'token' ? '*' : undefined}
+        />
       </Box>
-    );
-  }
-
-  // Step 7: Tunnel name
-  if (step === 'tunnelName') {
-    const options: SelectOption[] = [
-      { label: 'Use default', value: 'default' },
-      { label: 'Custom name', value: 'custom' },
-    ];
-
-    const handleSelect = (item: SelectOption) => {
-      if (item.value === 'default') {
-        // Complete with all collected data
-        const serviceMappings = services.map((s) => ({
-          ...s,
-          hostname: `${s.subdomain}.${domain}`,
-        }));
-
-        onComplete({
-          enabled: true,
-          mode,
-          domain,
-          token: mode === 'api' ? token : undefined,
-          accountId: mode === 'api' ? accountId : undefined,
-          zoneId: mode === 'api' ? zoneId : undefined,
-          tunnelName,
-          services: serviceMappings,
-        });
-      }
-    };
-
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter tunnel name</Text>
-        <Box paddingLeft={3}>
-          <Text dimColor>(Default: {tunnelName})</Text>
-        </Box>
-        <Box paddingLeft={3}>
-          <SelectInput items={options} onSelect={handleSelect} />
-        </Box>
-      </Box>
-    );
-  }
-
-  return null;
+    </Box>
+  );
 }
-
-export type { CloudflareConfig };

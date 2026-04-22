@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { render } from 'ink';
 import App from './app.js';
+import CredentialSetDialog from './components/CredentialSetDialog.js';
 import { validateArchitecture } from './validators/architecture.js';
 
 // Pre-flight check: validate architecture
@@ -22,16 +23,152 @@ program
   .description('Infrastructure automation CLI for homelabs')
   .version('1.0.0', '-v, --version', 'Output the current version')
   .option('-C <path>', 'Run as if started in <path>')
-  .option('-c <name>=<value>', 'Set config variable');
+  .option('-c <name>=<value>', 'Set config variable')
+  .option('--profile <name>', 'Credential profile to use', 'default');
 
 program
   .command('init', { isDefault: true })
   .description('Start the interactive wizard')
-  .action(() => {
-    render(<App />, {
+  .option('--profile <name>', 'Credential profile to use', 'default')
+  .action((options) => {
+    render(<App profile={options.profile} />, {
       exitOnCtrlC: true,
       patchConsole: false,
     });
+  });
+
+const credentials = program
+  .command('credentials')
+  .description('Manage API credentials');
+
+credentials
+  .command('set <key>')
+  .description('Set a single credential value')
+  .option('--profile <name>', 'Credential profile to use', 'default')
+  .action((key: string, options: { profile: string }) => {
+    render(
+      <CredentialSetDialog credentialKey={key} profile={options.profile} />,
+      {
+        exitOnCtrlC: true,
+        patchConsole: false,
+      }
+    );
+  });
+
+const cloudflare = program
+  .command('cloudflare')
+  .description('Manage Cloudflare Tunnel integration');
+
+cloudflare
+  .command('install')
+  .description('Install or reinstall Cloudflare Tunnel')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = {
+      ...process.env,
+      CLOUDFLARE_API_TOKEN: creds.cloudflare_api_token || '',
+    };
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--cloudflared', '--local'],
+      {
+        env,
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+cloudflare
+  .command('uninstall')
+  .description('Remove Cloudflare Tunnel from this device')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-cloudflare.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const vault = program
+  .command('vault')
+  .description('Manage HashiCorp Vault integration');
+
+vault
+  .command('install')
+  .description('Install or reinstall HashiCorp Vault')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--vault', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+vault
+  .command('uninstall')
+  .description('Remove HashiCorp Vault from this device')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-vault.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const grafana = program
+  .command('grafana')
+  .description('Manage Grafana observability stack');
+
+grafana
+  .command('install')
+  .description('Install or reinstall Grafana observability stack')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = {
+      ...process.env,
+      GRAFANA_ADMIN_PASSWORD: creds.grafana_admin_password || '',
+    };
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--ansible-only', '--local'],
+      {
+        env,
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+grafana
+  .command('uninstall')
+  .description('Remove Grafana and all observability data')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/uninstall-loki.sh', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
   });
 
 program

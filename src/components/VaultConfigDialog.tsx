@@ -1,150 +1,90 @@
 import { Box, Text } from 'ink';
-import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
 import { useState } from 'react';
+import type { CloudflareConfig } from './CloudflareConfigDialog.js';
 
-interface VaultConfig {
+export interface VaultConfig {
   enabled: boolean;
-  storagePath?: string;
-  port?: number;
+  version: string;
+  port: number;
+  enableKv: boolean;
+  enableAudit: boolean;
+  domain: string;
 }
 
 interface VaultConfigDialogProps {
-  existingConfig?: Partial<VaultConfig>;
+  cloudflareConfig?: CloudflareConfig | null;
   onComplete: (config: VaultConfig) => void;
 }
 
-type Step = 'enable' | 'pathChoice' | 'customPath' | 'port';
-
-interface SelectOption {
-  label: string;
-  value: string;
-}
-
 export default function VaultConfigDialog({
-  existingConfig,
+  cloudflareConfig,
   onComplete,
 }: VaultConfigDialogProps) {
-  const [step, setStep] = useState<Step>('enable');
-  const [storagePath, setStoragePath] = useState(
-    existingConfig?.storagePath || '~/vault'
-  );
-  const [port, setPort] = useState(existingConfig?.port || 8200);
-  const [inputValue, setInputValue] = useState('');
+  const [decided, setDecided] = useState(false);
 
-  if (step === 'enable') {
-    const options: SelectOption[] = [
-      { label: 'Yes', value: 'yes' },
-      { label: 'No', value: 'no' },
-      { label: 'Skip for now', value: 'skip' },
-    ];
+  const cloudflareEnabled = cloudflareConfig?.enabled === true;
+  const suggestedDomain = cloudflareEnabled
+    ? `vault.${cloudflareConfig.zoneName || 'example.com'}`
+    : '';
 
-    const handleSelect = (item: SelectOption) => {
-      if (item.value === 'yes') {
-        setStep('pathChoice');
-      } else {
-        onComplete({ enabled: false });
-      }
-    };
-
+  if (!decided && !cloudflareEnabled) {
+    setDecided(true);
+    onComplete({
+      enabled: true,
+      version: 'latest',
+      port: 8200,
+      enableKv: true,
+      enableAudit: true,
+      domain: '',
+    });
     return (
       <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Install HashiCorp Vault?</Text>
+        <Text bold>◆ Expose Vault publicly via Cloudflare?</Text>
         <Box paddingLeft={3}>
-          <Text dimColor>(Secrets management)</Text>
+          <Text dimColor>
+            ○ Yes — not available (Cloudflare Tunnel is not enabled)
+          </Text>
         </Box>
         <Box paddingLeft={3}>
-          <SelectInput items={options} onSelect={handleSelect} />
+          <Text>● No — local access only (http://localhost:8200)</Text>
         </Box>
       </Box>
     );
   }
 
-  if (step === 'pathChoice') {
-    const options: SelectOption[] = [
-      { label: 'Use default', value: 'default' },
-      { label: 'Custom path', value: 'custom' },
+  if (!decided) {
+    const options = [
+      { label: `Yes — use ${suggestedDomain}`, value: 'yes' },
+      { label: 'No — local access only (http://localhost:8200)', value: 'no' },
     ];
 
-    const handleSelect = (item: SelectOption) => {
-      if (item.value === 'default') {
-        setStep('port');
-      } else {
-        setStep('customPath');
-      }
-    };
-
     return (
       <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Vault storage path</Text>
+        <Text bold>◆ Expose Vault publicly via Cloudflare?</Text>
         <Box paddingLeft={3}>
-          <Text dimColor>(Default: ~/vault)</Text>
+          <Text dimColor>Suggested domain: {suggestedDomain}</Text>
         </Box>
         <Box paddingLeft={3}>
-          <SelectInput items={options} onSelect={handleSelect} />
-        </Box>
-      </Box>
-    );
-  }
-
-  if (step === 'customPath') {
-    const handleSubmit = (value: string) => {
-      const finalPath = value.trim() || storagePath;
-      setStoragePath(finalPath);
-      setInputValue('');
-      setStep('port');
-    };
-
-    return (
-      <Box flexDirection="column" paddingY={1}>
-        <Text bold>◆ Enter custom storage path</Text>
-        <Box paddingLeft={3}>
-          <Text dimColor>(Current: {storagePath})</Text>
-        </Box>
-        <Box paddingLeft={3} marginTop={1}>
-          <TextInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSubmit={handleSubmit}
+          <SelectInput
+            items={options}
+            onSelect={(item) => {
+              const domain = item.value === 'yes' ? suggestedDomain : '';
+              setDecided(true);
+              onComplete({
+                enabled: true,
+                version: 'latest',
+                port: 8200,
+                enableKv: true,
+                enableAudit: true,
+                domain,
+              });
+            }}
           />
         </Box>
       </Box>
     );
   }
 
-  const handlePortSubmit = (value: string) => {
-    const portNum = parseInt(value.trim(), 10);
-    if (!isNaN(portNum) && portNum >= 1024 && portNum <= 65535) {
-      setPort(portNum);
-      onComplete({
-        enabled: true,
-        storagePath,
-        port: portNum,
-      });
-    } else if (value.trim() === '') {
-      onComplete({
-        enabled: true,
-        storagePath,
-        port,
-      });
-    }
-  };
-
-  return (
-    <Box flexDirection="column" paddingY={1}>
-      <Text bold>◆ Vault port</Text>
-      <Box paddingLeft={3}>
-        <Text dimColor>(Default: {port})</Text>
-      </Box>
-      <Box paddingLeft={3} marginTop={1}>
-        <TextInput
-          value={inputValue}
-          onChange={setInputValue}
-          onSubmit={handlePortSubmit}
-        />
-      </Box>
-    </Box>
-  );
+  return null;
 }
-
-export type { VaultConfig };
