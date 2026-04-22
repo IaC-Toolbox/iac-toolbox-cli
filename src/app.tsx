@@ -21,6 +21,7 @@ import GrafanaConfigDialog from './components/GrafanaConfigDialog.js';
 import type { GrafanaConfig } from './components/GrafanaConfigDialog.js';
 import WizardSummaryDialog from './components/WizardSummaryDialog.js';
 import InstallPromptDialog from './components/InstallPromptDialog.js';
+import BecomePasswordDialog from './components/BecomePasswordDialog.js';
 import InstallRunnerDialog from './components/InstallRunnerDialog.js';
 import InstallCompleteDialog from './components/InstallCompleteDialog.js';
 import ManualRunDialog from './components/ManualRunDialog.js';
@@ -80,6 +81,7 @@ export default function App({ profile = 'default' }: AppProps) {
 
   // Step 7: Install prompt + execution
   const [installChoice, setInstallChoice] = useState<boolean | null>(null);
+  const [becomePassword, setBecomePassword] = useState<string | null>(null);
   const [installRunning, setInstallRunning] = useState(false);
   const [installResult, setInstallResult] = useState<InstallResult | null>(
     null
@@ -310,9 +312,6 @@ export default function App({ profile = 'default' }: AppProps) {
       <InstallPromptDialog
         onSelect={(install) => {
           setInstallChoice(install);
-          if (install) {
-            setInstallRunning(true);
-          }
         }}
       />
     );
@@ -323,6 +322,18 @@ export default function App({ profile = 'default' }: AppProps) {
     return <ManualRunDialog destination={directory} />;
   }
 
+  // 9a. Collect become (sudo) password before running Ansible
+  if (filesWritten && installChoice === true && becomePassword === null) {
+    return (
+      <BecomePasswordDialog
+        onComplete={(pw) => {
+          setBecomePassword(pw);
+          setInstallRunning(true);
+        }}
+      />
+    );
+  }
+
   // 10. Install running — show live output view
   if (filesWritten && installRunning && directory && selectedIntegrations) {
     return (
@@ -331,6 +342,7 @@ export default function App({ profile = 'default' }: AppProps) {
         profile={profile}
         dockerHubUsername={githubBuildWorkflowConfig?.dockerHubUsername}
         dockerImageName={githubBuildWorkflowConfig?.dockerImageName}
+        becomePassword={becomePassword ?? undefined}
         onComplete={handleInstallComplete}
       />
     );
