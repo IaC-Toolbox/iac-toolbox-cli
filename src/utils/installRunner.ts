@@ -136,12 +136,19 @@ export function runInstallScript(
 
     child.on('close', (code) => {
       process.removeListener('SIGINT', sigintHandler);
-      resolve({
-        success: code === 0,
-        exitCode: code,
-        lastErrorLine: code !== 0 ? lastStderrLine || null : null,
-        errorLines: code !== 0 && stderrLines.length > 0 ? stderrLines : null,
-      });
+      // Wait for stdio buffers to fully flush before resolving.
+      // The 'close' event fires when the process exits, but inherited stdio
+      // streams may still have buffered data that hasn't been written to the
+      // terminal yet. A short delay ensures the user sees complete output
+      // before the component unmounts and the UI transitions.
+      setTimeout(() => {
+        resolve({
+          success: code === 0,
+          exitCode: code,
+          lastErrorLine: code !== 0 ? lastStderrLine || null : null,
+          errorLines: code !== 0 && stderrLines.length > 0 ? stderrLines : null,
+        });
+      }, 100);
     });
 
     child.on('error', (err) => {
