@@ -14,6 +14,7 @@ interface InstallRunnerDialogProps {
   profile: string;
   dockerHubUsername?: string;
   dockerImageName?: string;
+  becomePassword?: string;
   onComplete: (result: InstallResult) => void;
   /** Injectable for testing — defaults to the real installScriptExists */
   _installScriptExists?: (dest: string) => boolean;
@@ -41,6 +42,7 @@ export default function InstallRunnerDialog({
   profile,
   dockerHubUsername,
   dockerImageName,
+  becomePassword,
   onComplete,
   _installScriptExists = installScriptExists,
   _runInstallScript = runInstallScript,
@@ -73,7 +75,12 @@ export default function InstallRunnerDialog({
       return;
     }
 
-    const env = buildInstallEnv(profile, dockerHubUsername, dockerImageName);
+    const env = buildInstallEnv(
+      profile,
+      dockerHubUsername,
+      dockerImageName,
+      becomePassword
+    );
 
     _runInstallScript(destination, env, (line) => {
       if (!cancelled) {
@@ -98,6 +105,7 @@ export default function InstallRunnerDialog({
     profile,
     dockerHubUsername,
     dockerImageName,
+    becomePassword,
     onComplete,
     addLine,
     _installScriptExists,

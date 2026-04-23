@@ -30,7 +30,8 @@ const REQUIRED_ENV_VARS = [
 export function buildInstallEnv(
   profile: string = 'default',
   dockerHubUsername?: string,
-  dockerImageName?: string
+  dockerImageName?: string,
+  becomePassword?: string
 ): Record<string, string> {
   const creds = loadCredentials(profile);
 
@@ -41,6 +42,7 @@ export function buildInstallEnv(
     DOCKER_HUB_USERNAME: dockerHubUsername || creds.docker_hub_username || '',
     DOCKER_HUB_TOKEN: creds.docker_hub_token || '',
     DOCKER_IMAGE_NAME: dockerImageName || creds.docker_image_name || '',
+    ANSIBLE_BECOME_PASSWORD: becomePassword || '',
   };
 }
 
