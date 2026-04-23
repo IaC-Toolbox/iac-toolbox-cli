@@ -1,7 +1,7 @@
 ---
 - name: Download cloudflared binary
   get_url:
-    url: https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64
+    url: "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-{{ cloudflared_arch }}"
     dest: /usr/local/bin/cloudflared
     mode: '0755'
 
@@ -12,19 +12,19 @@
 
 - name: Display cloudflared version
   debug:
-    msg: 'Cloudflared installed: {{ cloudflared_version.stdout }}'
+    msg: "Cloudflared installed: {{ cloudflared_version.stdout }}"
 
 - name: Create .cloudflared directory
   file:
-    path: '/home/{{ ansible_user }}/.cloudflared'
+    path: "/home/{{ ansible_user }}/.cloudflared"
     state: directory
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0700'
 
 - name: Check if cert.pem exists
   stat:
-    path: '/home/{{ ansible_user }}/.cloudflared/cert.pem'
+    path: "/home/{{ ansible_user }}/.cloudflared/cert.pem"
   register: cloudflare_cert
 
 - name: Fail if cert.pem does not exist
@@ -39,13 +39,13 @@
   register: tunnel_list
   failed_when: false
   changed_when: false
-  become_user: '{{ ansible_user }}'
+  become_user: "{{ ansible_user }}"
 
 - name: Create tunnel if not exists
   command: cloudflared tunnel create {{ cloudflare.tunnel_name }}
   args:
-    chdir: '/home/{{ ansible_user }}/.cloudflared'
-  become_user: '{{ ansible_user }}'
+    chdir: "/home/{{ ansible_user }}/.cloudflared"
+  become_user: "{{ ansible_user }}"
   when: 'cloudflare.tunnel_name not in tunnel_list.stdout'
   register: tunnel_created
 
@@ -53,7 +53,7 @@
   command: cloudflared tunnel list --output json
   register: tunnel_list_json
   changed_when: false
-  become_user: '{{ ansible_user }}'
+  become_user: "{{ ansible_user }}"
 
 - name: Extract tunnel ID
   set_fact:
@@ -67,9 +67,9 @@
 - name: Create DNS routes
   command: cloudflared tunnel route dns {{ cloudflare.tunnel_name }} {{ item.hostname }}
   args:
-    chdir: '/home/{{ ansible_user }}/.cloudflared'
-  become_user: '{{ ansible_user }}'
-  loop: '{{ cloudflare.domains }}'
+    chdir: "/home/{{ ansible_user }}/.cloudflared"
+  become_user: "{{ ansible_user }}"
+  loop: "{{ cloudflare.domains }}"
   register: dns_routes
   failed_when:
     - dns_routes.rc != 0
@@ -87,15 +87,15 @@
 
 - name: Create config.yml
   copy:
-    dest: '/home/{{ ansible_user }}/.cloudflared/config.yml'
+    dest: "/home/{{ ansible_user }}/.cloudflared/config.yml"
     content: |
       tunnel: {{ cloudflare.tunnel_name }}
       credentials-file: /home/{{ ansible_user }}/.cloudflared/{{ tunnel_id }}.json
 
       ingress:
       {{ ingress_config | indent(2, true) }}
-    owner: '{{ ansible_user }}'
-    group: '{{ ansible_user }}'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: '0600'
   notify: Restart cloudflared
 

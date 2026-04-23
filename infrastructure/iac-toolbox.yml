@@ -2,16 +2,16 @@
 # Safe to commit — no secrets stored here
 
 device:
-  profile: 'both'
+  profile: "app-server"
 
 docker:
   enabled: true # always installed, not configurable
 
 github_build_workflow:
   enabled: true
-  docker_hub_username: 'vvasylkovskyi1'
-  docker_image_name: 'vvasylkovskyi1/my-repo'
-  docker_hub_token: '{{ docker_hub_token }}' # injected by CLI at deploy time
+  docker_hub_username: "vvasylkovskyi1"
+  docker_image_name: "vvasylkovskyi1/my-repo"
+  docker_hub_token: "{{ docker_hub_token }}" # injected by CLI at deploy time
 
 github_runner:
   enabled: false # coming soon

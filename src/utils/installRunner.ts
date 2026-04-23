@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import { loadCredentials } from './credentials.js';
@@ -75,9 +75,9 @@ export function getManualRunCommand(destination: string): string {
 /**
  * Run the install script with --ansible-only --local flags.
  *
- * Pipes both stdout and stderr so all output lines are forwarded to the
- * optional onLine callback in real time. Returns a promise that resolves
- * with the exit code and last error line.
+ * When onLine callback is provided, pipes stdout/stderr to capture output.
+ * When onLine is not provided, inherits all stdio for interactive mode (password prompts).
+ * Returns a promise that resolves with the exit code and last error line.
  */
 export function runInstallScript(
   destination: string,
@@ -99,47 +99,51 @@ export function runInstallScript(
       return;
     }
 
+    // If no onLine callback, use 'inherit' for interactive mode (password prompts)
+    // Otherwise pipe streams to capture output
+    const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
+      env,
+      stdio: onLine ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+    }) as ChildProcess;
+
     let lastStderrLine = '';
     const stderrLines: string[] = [];
     const maxErrorLines = 15;
 
-    const child = spawn('bash', [scriptPath, '--ansible-only', '--local'], {
-      env,
-      stdio: ['inherit', 'pipe', 'pipe'],
-    });
+    if (onLine) {
+      const emitLines = (text: string) => {
+        const lines = text.split('\n').filter((line) => line.trim() !== '');
+        for (const line of lines) {
+          onLine(line);
+        }
+        return lines;
+      };
 
-    const emitLines = (text: string) => {
-      const lines = text.split('\n').filter((line) => line.trim() !== '');
-      for (const line of lines) {
-        onLine?.(line);
-      }
-      return lines;
-    };
+      // Capture and forward stdout lines
+      child.stdout?.on('data', (data: Buffer) => {
+        emitLines(data.toString());
+      });
 
-    // Capture and forward stdout lines
-    child.stdout?.on('data', (data: Buffer) => {
-      emitLines(data.toString());
-    });
+      // Capture stderr lines for error summary and forward to caller
+      child.stderr?.on('data', (data: Buffer) => {
+        const text = data.toString();
+        const lines = emitLines(text);
 
-    // Capture stderr lines for error summary and forward to caller
-    child.stderr?.on('data', (data: Buffer) => {
-      const text = data.toString();
-      const lines = emitLines(text);
+        // Add new lines to the buffer
+        stderrLines.push(...lines);
 
-      // Add new lines to the buffer
-      stderrLines.push(...lines);
+        // Keep only the last maxErrorLines
+        if (stderrLines.length > maxErrorLines) {
+          stderrLines.splice(0, stderrLines.length - maxErrorLines);
+        }
 
-      // Keep only the last maxErrorLines
-      if (stderrLines.length > maxErrorLines) {
-        stderrLines.splice(0, stderrLines.length - maxErrorLines);
-      }
-
-      // Track the very last line for backwards compatibility
-      const lastLine = lines[lines.length - 1];
-      if (lastLine) {
-        lastStderrLine = lastLine;
-      }
-    });
+        // Track the very last line for backwards compatibility
+        const lastLine = lines[lines.length - 1];
+        if (lastLine) {
+          lastStderrLine = lastLine;
+        }
+      });
+    }
 
     const sigintHandler = () => {
       child.kill('SIGINT');

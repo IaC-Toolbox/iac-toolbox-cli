@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 import { loadCredentials } from './credentials.js';
 import {
   buildInstallEnv,
@@ -13,6 +14,16 @@ import {
 function configFileExists(destination: string): boolean {
   const configPath = path.join(destination, 'iac-toolbox.yml');
   return fs.existsSync(configPath);
+}
+
+/**
+ * Check if the user has passwordless sudo configured.
+ */
+function checkPasswordlessSudo(): boolean {
+  const result = spawnSync('sudo', ['-n', 'true'], {
+    stdio: 'ignore',
+  });
+  return result.status === 0;
 }
 
 /**
@@ -59,7 +70,7 @@ export async function runStandaloneInstall(
     env.GRAFANA_ADMIN_PASSWORD = credentials.grafana_admin_password;
   }
 
-  // Run the install script and stream output directly to terminal
+  // Run the install script in interactive mode (inherits stdio for password prompts)
   const result = await runInstallScript(destination, env);
 
   // Exit with the same code as install.sh

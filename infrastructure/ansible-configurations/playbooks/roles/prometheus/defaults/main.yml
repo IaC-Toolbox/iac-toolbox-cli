@@ -2,12 +2,12 @@
 # Default variables for prometheus role
 prometheus:
   enabled: true
-  version: 'latest'
-  base_dir: '/home/{{ ansible_user }}/observability'
+  version: "latest"
+  base_dir: "/home/{{ ansible_user }}/observability"
   port: 9090
-  scrape_interval: '15s'
-  retention: '15d'
+  scrape_interval: "15s"
+  retention: "15d"
 
 node_exporter:
-  version: 'latest'
+  version: "latest"
   port: 9100
