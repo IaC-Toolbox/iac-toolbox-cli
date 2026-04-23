@@ -9,7 +9,7 @@ Status: complete
 
 ## Tasks
 
-- [ ] 1. Create `src/components/BecomePasswordDialog.tsx` — new Ink component with a masked `TextInput` (mask="*") that collects the sudo password; validates non-empty on submit (shows inline error if empty); calls `onComplete(password)` on valid submit
+- [ ] 1. Create `src/components/BecomePasswordDialog.tsx` — new Ink component with a masked `TextInput` (mask="\*") that collects the sudo password; validates non-empty on submit (shows inline error if empty); calls `onComplete(password)` on valid submit
 - [ ] 2. Update `buildInstallEnv` in `src/utils/installRunner.ts` — add optional `becomePassword?: string` parameter; inject `ANSIBLE_BECOME_PASSWORD: becomePassword || ''` into the returned env object
 - [ ] 3. Update `InstallRunnerDialog.tsx` — add `becomePassword?: string` prop; forward it to `buildInstallEnv`
 - [ ] 4. Update `app.tsx` — add `becomePassword` state; insert new wizard step 9a between `InstallPromptDialog` confirmation and `InstallRunnerDialog` mount; pass `becomePassword` to `InstallRunnerDialog`

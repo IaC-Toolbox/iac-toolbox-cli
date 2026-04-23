@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import { spawnSync } from 'child_process';
 import { loadCredentials } from './credentials.js';
 import {
   buildInstallEnv,
@@ -14,16 +13,6 @@ import {
 function configFileExists(destination: string): boolean {
   const configPath = path.join(destination, 'iac-toolbox.yml');
   return fs.existsSync(configPath);
-}
-
-/**
- * Check if the user has passwordless sudo configured.
- */
-function checkPasswordlessSudo(): boolean {
-  const result = spawnSync('sudo', ['-n', 'true'], {
-    stdio: 'ignore',
-  });
-  return result.status === 0;
 }
 
 /**

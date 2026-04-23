@@ -184,9 +184,13 @@ if [ "$RUN_ANSIBLE" = true ]; then
   if [ -n "$ANSIBLE_TAGS" ]; then
     ANSIBLE_CMD+=(--tags "$ANSIBLE_TAGS")
   fi
-  # In local mode, prompt for sudo password if needed
-  if [ "$RPI_LOCAL" = true ]; then
-    ANSIBLE_CMD+=(--ask-become-pass)
+  # In local mode, use become password from env or prompt interactively
+  if [ "$RPI_LOCAL_MODE" = true ]; then
+    if [ -n "$ANSIBLE_BECOME_PASSWORD" ]; then
+      ANSIBLE_CMD+=(--become)
+    else
+      ANSIBLE_CMD+=(--ask-become-pass)
+    fi
   fi
 
   (

@@ -22,7 +22,7 @@
 
 - name: Add Docker repository
   apt_repository:
-    repo: "deb [arch=arm64] https://download.docker.com/linux/debian {{ debian_release.stdout }} stable"
+    repo: 'deb [arch=arm64] https://download.docker.com/linux/debian {{ debian_release.stdout }} stable'
     state: present
     filename: docker
 
@@ -39,7 +39,7 @@
 
 - name: Add user to docker group
   user:
-    name: "{{ ansible_user }}"
+    name: '{{ ansible_user }}'
     groups: docker
     append: yes
 
@@ -56,4 +56,4 @@
 
 - name: Display Docker version
   debug:
-    msg: "Docker installed: {{ docker_version.stdout }}"
+    msg: 'Docker installed: {{ docker_version.stdout }}'

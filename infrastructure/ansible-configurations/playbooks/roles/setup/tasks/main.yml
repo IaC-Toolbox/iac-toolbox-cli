@@ -19,8 +19,8 @@
 - name: Ensure en_US.UTF-8 locale is present
   lineinfile:
     path: /etc/locale.gen
-    regexp: "^#?en_US.UTF-8 UTF-8"
-    line: "en_US.UTF-8 UTF-8"
+    regexp: '^#?en_US.UTF-8 UTF-8'
+    line: 'en_US.UTF-8 UTF-8'
 
 - name: Generate locale
   command: locale-gen

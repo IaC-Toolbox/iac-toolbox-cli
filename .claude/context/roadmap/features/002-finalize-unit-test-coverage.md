@@ -14,35 +14,35 @@ Multiple test files contain only placeholder `expect(true).toBe(true)` tests, re
 
 ## What Changes
 
-| Area | Change |
-| --- | --- |
-| `src/utils/ansibleRunner.test.ts` | Replace placeholder — add tests for `buildInstallEnv`, `resolveInstallScript`, `installScriptExists`, `runInstallScript` with mocked `spawn` |
-| `src/utils/envParser.test.ts` | Replace placeholder — add tests for parsing `.env` format if that's what this module does |
-| `src/utils/iacToolboxConfig.test.ts` | Replace placeholder — add tests for loading/saving `iac-toolbox.yml` |
-| `src/utils/downloadFiles.test.ts` | New file — add tests for `downloadFile`, `fetchGitHubDirectory`, `downloadGitHubDirectory` with mocked `https` |
-| `src/utils/standaloneInstall.test.ts` | New file — add tests for `runStandaloneInstall`, `configFileExists`, `checkPasswordlessSudo` |
-| `src/utils/installRunner.test.ts` | Expand existing — currently 6.25% coverage, add tests for stdio piping modes and error capture |
-| `src/utils/configGenerator.test.ts` | Expand existing — currently 52.7% coverage, add edge cases for all integration combinations |
-| `src/utils/credentials.test.ts` | Expand existing — currently 58.33% coverage, add tests for `loadCredentials`, `saveCredentials`, file I/O error cases |
-| `src/utils/credentialValidators.test.ts` | Expand existing — currently 40% coverage, add tests for all validator functions (GitHub PAT, Docker token, Cloudflare token, etc.) |
-| `src/validators/prerequisites.test.ts` | Replace placeholder — currently 0% coverage, add tests for prerequisite checks |
+| Area                                     | Change                                                                                                                                       |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/utils/ansibleRunner.test.ts`        | Replace placeholder — add tests for `buildInstallEnv`, `resolveInstallScript`, `installScriptExists`, `runInstallScript` with mocked `spawn` |
+| `src/utils/envParser.test.ts`            | Replace placeholder — add tests for parsing `.env` format if that's what this module does                                                    |
+| `src/utils/iacToolboxConfig.test.ts`     | Replace placeholder — add tests for loading/saving `iac-toolbox.yml`                                                                         |
+| `src/utils/downloadFiles.test.ts`        | New file — add tests for `downloadFile`, `fetchGitHubDirectory`, `downloadGitHubDirectory` with mocked `https`                               |
+| `src/utils/standaloneInstall.test.ts`    | New file — add tests for `runStandaloneInstall`, `configFileExists`, `checkPasswordlessSudo`                                                 |
+| `src/utils/installRunner.test.ts`        | Expand existing — currently 6.25% coverage, add tests for stdio piping modes and error capture                                               |
+| `src/utils/configGenerator.test.ts`      | Expand existing — currently 52.7% coverage, add edge cases for all integration combinations                                                  |
+| `src/utils/credentials.test.ts`          | Expand existing — currently 58.33% coverage, add tests for `loadCredentials`, `saveCredentials`, file I/O error cases                        |
+| `src/utils/credentialValidators.test.ts` | Expand existing — currently 40% coverage, add tests for all validator functions (GitHub PAT, Docker token, Cloudflare token, etc.)           |
+| `src/validators/prerequisites.test.ts`   | Replace placeholder — currently 0% coverage, add tests for prerequisite checks                                                               |
 
 ---
 
 ## Test Coverage Targets
 
-| Module | Current | Target |
-| --- | --- | --- |
-| `ansibleRunner.ts` | 0% | 80%+ |
-| `envParser.ts` | 0% | 80%+ |
-| `iacToolboxConfig.ts` | 0% | 80%+ |
-| `downloadFiles.ts` | 0% | 70%+ (network I/O heavy) |
-| `standaloneInstall.ts` | 0% | 70%+ (integration heavy) |
-| `installRunner.ts` | 6.25% | 75%+ |
-| `configGenerator.ts` | 52.7% | 85%+ |
-| `credentials.ts` | 58.33% | 85%+ |
-| `credentialValidators.ts` | 40% | 80%+ |
-| `prerequisites.ts` | 50% | 75%+ |
+| Module                    | Current | Target                   |
+| ------------------------- | ------- | ------------------------ |
+| `ansibleRunner.ts`        | 0%      | 80%+                     |
+| `envParser.ts`            | 0%      | 80%+                     |
+| `iacToolboxConfig.ts`     | 0%      | 80%+                     |
+| `downloadFiles.ts`        | 0%      | 70%+ (network I/O heavy) |
+| `standaloneInstall.ts`    | 0%      | 70%+ (integration heavy) |
+| `installRunner.ts`        | 6.25%   | 75%+                     |
+| `configGenerator.ts`      | 52.7%   | 85%+                     |
+| `credentials.ts`          | 58.33%  | 85%+                     |
+| `credentialValidators.ts` | 40%     | 80%+                     |
+| `prerequisites.ts`        | 50%     | 75%+                     |
 
 ---
 
