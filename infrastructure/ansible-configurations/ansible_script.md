@@ -1,4 +1,3 @@
-
 ## Running Ansible
 
 Run the playbook directly:
@@ -35,17 +34,17 @@ all:
       ansible_ssh_private_key_file: ~/.ssh/<your-key-file>
 ```
 
-The Playbooks describe steps to run on hosts. 
+The Playbooks describe steps to run on hosts.
 
 ```yml
 # playbook.yml
-- name: Setup Raspberry Pi 
+- name: Setup Raspberry Pi
   hosts: all
   become: true
 
   vars:
-    datadog_api_key: "{{ datadog_api_key }}"
-    datadog_site: "datadoghq.eu"
+    datadog_api_key: '{{ datadog_api_key }}'
+    datadog_site: 'datadoghq.eu'
 
   roles:
     - setup
@@ -57,20 +56,19 @@ The Playbooks describe steps to run on hosts.
 
 Note, that playbooks describe high-level roles (aka steps) and variables. Secrets are injected via environment variables by the CLI at runtime.
 
+### **Write Roles**:
 
-### **Write Roles**: 
+We have several roles to:
 
-We have several roles to: 
-
-  - Install base software: python 
-  - Install docker to run apps
-  - Install Datadog to monitor device health
-  - Install Cloudflare to expose device to web securely and allow remote ssh access (from internet)
+- Install base software: python
+- Install docker to run apps
+- Install Datadog to monitor device health
+- Install Cloudflare to expose device to web securely and allow remote ssh access (from internet)
 
 ### Write a role: (e.g. `setup.yml`)
 
 ```yml
-# setup.yml 
+# setup.yml
 
 - name: Update package list
   command: apt update
@@ -93,21 +91,21 @@ We have several roles to:
 ansible-playbook -i inventory.ini setup.yml
 ```
 
-Verify on the Rpi that python was installed by running: 
+Verify on the Rpi that python was installed by running:
 
 ```bash
 python -v
 ```
 
-### Adding Datadog Agent via Ansible 
+### Adding Datadog Agent via Ansible
 
-Install the Datadog Ansible Collection from Ansible Galaxy on your Ansible Server: 
+Install the Datadog Ansible Collection from Ansible Galaxy on your Ansible Server:
 
 ```bash
 ansible-galaxy collection install datadog.dd
 ```
 
-Add datadog rule: 
+Add datadog rule:
 
 ```yml
 - hosts: servers
@@ -116,8 +114,8 @@ Add datadog rule:
       import_role:
         name: datadog.dd.agent
   vars:
-    datadog_api_key: "{{ datadog_api_key }}"
-    datadog_site: "datadoghq.eu"
+    datadog_api_key: '{{ datadog_api_key }}'
+    datadog_site: 'datadoghq.eu'
 ```
 
 ### Check the Datadog process is working
@@ -129,11 +127,9 @@ sudo tail -n 100 /var/log/datadog/agent.log
 ```
 
 ### Confirm on the Datadog UI
+
 Go to your [Datadog infrastructure dashboard](https://app.datadoghq.eu/infrastructure) (or the appropriate site for your region) and check:
 
-  - Your Raspberry Pi shows up as a host.
-  - Metrics are being collected.
-  - The host has the correct hostname (matching your RPi).
-
-
-
+- Your Raspberry Pi shows up as a host.
+- Metrics are being collected.
+- The host has the correct hostname (matching your RPi).

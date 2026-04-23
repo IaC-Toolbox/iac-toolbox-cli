@@ -14,12 +14,12 @@ When `install.sh` runs Ansible with piped stdio (required for live output captur
 
 ## What Changes
 
-| Area | Change |
-| --- | --- |
-| `src/components/BecomePasswordDialog.tsx` | New component — masked password input step shown before install |
-| `src/utils/installRunner.ts` | `buildInstallEnv` gains an optional `becomePassword` parameter; injects `ANSIBLE_BECOME_PASSWORD` |
-| `src/app.tsx` | New wizard step 9a between `InstallPromptDialog` and `InstallRunnerDialog`; passes `becomePassword` through |
-| `src/components/InstallRunnerDialog.tsx` | Gains a `becomePassword` prop; forwards to `buildInstallEnv` |
+| Area                                      | Change                                                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `src/components/BecomePasswordDialog.tsx` | New component — masked password input step shown before install                                             |
+| `src/utils/installRunner.ts`              | `buildInstallEnv` gains an optional `becomePassword` parameter; injects `ANSIBLE_BECOME_PASSWORD`           |
+| `src/app.tsx`                             | New wizard step 9a between `InstallPromptDialog` and `InstallRunnerDialog`; passes `becomePassword` through |
+| `src/components/InstallRunnerDialog.tsx`  | Gains a `becomePassword` prop; forwards to `buildInstallEnv`                                                |
 
 ---
 

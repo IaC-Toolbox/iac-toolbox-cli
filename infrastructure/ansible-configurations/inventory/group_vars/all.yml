@@ -20,7 +20,7 @@ docker:
 cloudflare:
   enabled: true
   mode: "{{ lookup('env', 'CLOUDFLARE_MODE') | default('oauth', true) }}" # oauth (current login/cert.pem flow) or api (token-based flow)
-  user: "{{ ansible_user }}" # User running cloudflared service
+  user: '{{ ansible_user }}' # User running cloudflared service
   account_id: "{{ lookup('env', 'CLOUDFLARE_ACCOUNT_ID') | default('', true) }}"
   zone_id: "{{ lookup('env', 'CLOUDFLARE_ZONE_ID') | default('', true) }}"
   tunnel_name: main-backend-tunnel # Name of the tunnel in Cloudflare
@@ -41,13 +41,13 @@ github_runner:
   token: "{{ lookup('env', 'GITHUB_RUNNER_TOKEN') }}"
   version: "{{ lookup('env', 'RUNNER_VERSION') | default('2.333.1', true) }}"
   labels: "{{ lookup('env', 'RUNNER_LABELS') | default('rpi,arm64,docker', true) }}"
-  work_dir: "/home/{{ ansible_user }}/actions-runner"
+  work_dir: '/home/{{ ansible_user }}/actions-runner'
 
 # Vault Configuration
 vault:
   enabled: true
-  version: "latest"
-  base_dir: "/home/{{ ansible_user }}/vault"
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/vault'
   port: 8200
   enable_kv: true
   enable_audit: true
@@ -55,46 +55,46 @@ vault:
 # Grafana Configuration
 grafana:
   enabled: true
-  version: "latest"
-  base_dir: "/home/{{ ansible_user }}/grafana"
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/grafana'
   port: 3000
-  admin_user: "admin"
+  admin_user: 'admin'
   admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') }}"
-  vault_path: "kv/observability/grafana"
-  domain: "grafana.iac-toolbox.com"
+  vault_path: 'kv/observability/grafana'
+  domain: 'grafana.iac-toolbox.com'
 
 # Prometheus Configuration
 prometheus:
   enabled: true
-  version: "latest"
-  base_dir: "/home/{{ ansible_user }}/observability"
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/observability'
   port: 9090
-  scrape_interval: "15s"
-  retention: "15d" # Configurable: 7d, 15d, 30d, etc.
+  scrape_interval: '15s'
+  retention: '15d' # Configurable: 7d, 15d, 30d, etc.
 
 # Node Exporter Configuration
 node_exporter:
-  version: "latest"
+  version: 'latest'
   port: 9100
 
 # Loki Log Aggregation Configuration
 loki:
   enabled: true
-  version: "latest"
-  base_dir: "/home/{{ ansible_user }}/loki"
+  version: 'latest'
+  base_dir: '/home/{{ ansible_user }}/loki'
   port: 3100
   retention_hours: 168 # 7 days (72=3d, 168=7d, 336=14d, 720=30d)
 
 # Grafana Alloy Log Collector Configuration
 alloy:
   enabled: true
-  version: "latest"
+  version: 'latest'
   port: 12345
-  domain: "alloy.iac-toolbox.com"
+  domain: 'alloy.iac-toolbox.com'
 
 # GitHub Build Workflow Configuration
 github_build_workflow:
   enabled: false
-  docker_hub_username: ""
-  docker_image_name: ""
-  docker_hub_token: ""
+  docker_hub_username: ''
+  docker_image_name: ''
+  docker_hub_token: ''
