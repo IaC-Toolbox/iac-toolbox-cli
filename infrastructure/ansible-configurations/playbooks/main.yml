@@ -1,11 +1,7 @@
 ---
 - name: Setup Raspberry Pi Infrastructure
   hosts: all
-<<<<<<< Updated upstream
   become: false
-=======
-  become: true
->>>>>>> Stashed changes
   pre_tasks:
     - name: Validate connection to Raspberry Pi
       ping:
@@ -53,9 +49,14 @@
       tags: always
 
   roles:
+    - role: common
+      tags: [always]
+
     - role: setup
       tags: [setup, base]
-      when: setup is not defined or setup
+      when:
+        - (setup is not defined or setup)
+        - ansible_os_family != "Darwin"
 
     - role: docker
       tags: [docker]

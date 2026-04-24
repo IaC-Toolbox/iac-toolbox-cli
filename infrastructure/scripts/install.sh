@@ -8,6 +8,15 @@
 
 set -e
 
+# Bootstrap Ansible if not already installed
+if ! command -v ansible-playbook >/dev/null 2>&1; then
+  case "$(uname -s)" in
+    Darwin) bash "$(dirname "$0")/bootstrap/bootstrap-macos.sh" ;;
+    Linux)  bash "$(dirname "$0")/bootstrap/bootstrap-debian.sh" ;;
+    *)      echo "Unsupported OS: $(uname -s)"; exit 1 ;;
+  esac
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -115,18 +124,12 @@ echo -e "${GREEN}✓ Environment configured${NC}"
 echo ""
 
 echo -e "${YELLOW}[3/4] Validating required environment variables...${NC}"
-<<<<<<< Updated upstream
 # Only validate non-secret configuration variables required by install.sh
 # Secret validation (GITHUB_REPO_URL, GITHUB_RUNNER_TOKEN, etc.) is delegated
 # to Ansible roles, which will fail with clear errors if required variables are missing.
 REQUIRED_VARS=()
 if [ "$RPI_LOCAL" = false ]; then
   REQUIRED_VARS=("RPI_HOST" "RPI_USER")
-=======
-REQUIRED_VARS=("RPI_HOST" "RPI_USER")
-if [ "$RUN_ANSIBLE" = true ] && [ "$ANSIBLE_TAGS" != "vault" ]; then
-  REQUIRED_VARS+=("GITHUB_REPO_URL" "GITHUB_RUNNER_TOKEN")
->>>>>>> Stashed changes
 fi
 
 MISSING_VARS=()
@@ -156,10 +159,7 @@ if [ "$RUN_ANSIBLE" = true ]; then
   fi
 
   # Build secret variables from environment (injected by CLI from ~/.iac-toolbox/credentials)
-<<<<<<< Updated upstream
   # Ansible roles validate their required secrets and fail with clear errors if missing.
-=======
->>>>>>> Stashed changes
   SECRET_VARS=""
   SECRET_ENV_NAMES=(
     DOCKER_HUB_TOKEN DOCKER_HUB_USERNAME
@@ -174,8 +174,30 @@ if [ "$RUN_ANSIBLE" = true ]; then
   done
 
   ANSIBLE_CMD=(ansible-playbook -i inventory/all.yml playbooks/main.yml)
-  if [ -f "$ANSIBLE_DIR/iac-toolbox.yml" ]; then
-    ANSIBLE_CMD+=(--extra-vars "@iac-toolbox.yml")
+
+  # Load iac-toolbox.yml configuration file
+  # Priority: 1) IAC_TOOLBOX_CONFIG env var, 2) infrastructure/ folder, 3) ~/.iac-toolbox/
+  echo $PROJECT_ROOT
+  IAC_CONFIG_FILE=""
+  if [ -n "$IAC_TOOLBOX_CONFIG" ] && [ -f "$IAC_TOOLBOX_CONFIG" ]; then
+    IAC_CONFIG_FILE="$IAC_TOOLBOX_CONFIG"
+    echo -e "${GREEN}✓ Using configuration from IAC_TOOLBOX_CONFIG: $IAC_CONFIG_FILE${NC}"
+  else
+    for config_path in \
+      "$PROJECT_ROOT/iac-toolbox.yml" \
+      "$HOME/.iac-toolbox/iac-toolbox.yml"; do
+      if [ -f "$config_path" ]; then
+        IAC_CONFIG_FILE="$config_path"
+        echo -e "${GREEN}✓ Found configuration file: $IAC_CONFIG_FILE${NC}"
+        break
+      fi
+    done
+  fi
+
+  if [ -n "$IAC_CONFIG_FILE" ]; then
+    ANSIBLE_CMD+=(--extra-vars "@$IAC_CONFIG_FILE")
+  else
+    echo -e "${YELLOW}⚠ No iac-toolbox.yml configuration file found. Using role defaults.${NC}"
   fi
   ANSIBLE_CMD+=(--extra-vars "project_root=${PROJECT_ROOT}")
   if [ -n "$SECRET_VARS" ]; then
@@ -183,14 +205,6 @@ if [ "$RUN_ANSIBLE" = true ]; then
   fi
   if [ -n "$ANSIBLE_TAGS" ]; then
     ANSIBLE_CMD+=(--tags "$ANSIBLE_TAGS")
-  fi
-  # In local mode, use become password from env or prompt interactively
-  if [ "$RPI_LOCAL_MODE" = true ]; then
-    if [ -n "$ANSIBLE_BECOME_PASSWORD" ]; then
-      ANSIBLE_CMD+=(--become)
-    else
-      ANSIBLE_CMD+=(--ask-become-pass)
-    fi
   fi
 
   (
