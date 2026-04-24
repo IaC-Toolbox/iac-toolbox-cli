@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================
-# Raspberry Pi Infrastructure Install Script
+# IaC Toolbox Infrastructure Install Script
 # ============================================
 # Supports full deployment, targeted Ansible runs,
 # and Terraform-only execution.
@@ -23,10 +23,10 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-ANSIBLE_DIR="$PROJECT_ROOT/ansible-configurations"
-TERRAFORM_DIR="$PROJECT_ROOT/terraform/grafana-alerts"
-
+IAC_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || echo "$IAC_ROOT")"
+ANSIBLE_DIR="$IAC_ROOT/ansible-configurations"
+TERRAFORM_DIR="$IAC_ROOT/terraform/grafana-alerts"
 RUN_ANSIBLE=true
 RUN_TERRAFORM=true
 ANSIBLE_TAGS=""
@@ -79,7 +79,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}Raspberry Pi Infrastructure Install${NC}"
+echo -e "${GREEN}IaC Toolbox Infrastructure Install${NC}"
 echo -e "${GREEN}========================================${NC}"
 if [ "$RUN_ANSIBLE" = false ]; then
   echo -e "${YELLOW}Mode: Terraform only (--terraform-only)${NC}"
@@ -183,7 +183,7 @@ if [ "$RUN_ANSIBLE" = true ]; then
     echo -e "${GREEN}✓ Using configuration from IAC_TOOLBOX_CONFIG: $IAC_CONFIG_FILE${NC}"
   else
     for config_path in \
-      "$PROJECT_ROOT/iac-toolbox.yml" \
+      "$PROJECT_ROOT/infrastructure/iac-toolbox.yml" \
       "$HOME/.iac-toolbox/iac-toolbox.yml"; do
       if [ -f "$config_path" ]; then
         IAC_CONFIG_FILE="$config_path"
