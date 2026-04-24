@@ -138,33 +138,55 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     if (g.domain) {
       lines.push(`  domain: "${g.domain}"`);
     }
-    lines.push('');
+  } else {
+    lines.push('grafana:');
+    lines.push('  enabled: false # coming soon');
+  }
+  lines.push('');
+
+  // Prometheus
+  if (config.selectedIntegrations.includes('prometheus')) {
     lines.push('prometheus:');
     lines.push('  enabled: true');
     lines.push('  version: "latest"');
     lines.push('  port: 9090');
     lines.push('  scrape_interval: "15s"');
     lines.push('  retention: "15d"');
-    lines.push('');
+  } else {
+    lines.push('prometheus:');
+    lines.push('  enabled: false');
+  }
+  lines.push('');
+
+  // node_exporter and alloy are internal supporting services for Grafana
+  if (config.selectedIntegrations.includes('grafana') && config.grafana) {
     lines.push('node_exporter:');
     lines.push('  version: "latest"');
     lines.push('  port: 9100');
     lines.push('');
+  }
+
+  // Loki
+  if (config.selectedIntegrations.includes('loki')) {
     lines.push('loki:');
     lines.push('  enabled: true');
     lines.push('  version: "latest"');
     lines.push('  port: 3100');
     lines.push('  retention_hours: 168');
-    lines.push('');
+  } else {
+    lines.push('loki:');
+    lines.push('  enabled: false');
+  }
+  lines.push('');
+
+  if (config.selectedIntegrations.includes('grafana') && config.grafana) {
     lines.push('alloy:');
     lines.push('  enabled: true');
     lines.push('  version: "latest"');
     lines.push('  port: 12345');
-  } else {
-    lines.push('grafana:');
-    lines.push('  enabled: false # coming soon');
+    lines.push('');
   }
-  lines.push('');
+
   lines.push('pagerduty:');
   lines.push('  enabled: false # coming soon');
   lines.push('');

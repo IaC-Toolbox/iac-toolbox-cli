@@ -37,7 +37,17 @@ const INTEGRATIONS: Integration[] = [
   },
   {
     id: 'grafana',
-    label: 'Grafana (metrics, logs and alerts)',
+    label: 'Grafana (dashboards and logs visualization)',
+    selectable: true,
+  },
+  {
+    id: 'prometheus',
+    label: 'Prometheus (metrics collection)',
+    selectable: true,
+  },
+  {
+    id: 'loki',
+    label: 'Loki (logs collection)',
     selectable: true,
   },
   {

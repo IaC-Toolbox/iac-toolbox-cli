@@ -17,7 +17,14 @@ const PROFILES = [
 ];
 
 export const PROFILE_DEFAULTS: Record<DeviceProfile, string[]> = {
-  'devops-server': ['github_runner', 'cloudflare', 'vault', 'grafana'],
+  'devops-server': [
+    'github_runner',
+    'cloudflare',
+    'vault',
+    'grafana',
+    'prometheus',
+    'loki',
+  ],
   'app-server': ['github_build_workflow', 'cloudflare'],
   both: [],
 };
