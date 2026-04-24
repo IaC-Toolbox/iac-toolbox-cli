@@ -2,11 +2,14 @@
 # Default variables for Loki role
 # These can be overridden in inventory/group_vars/all.yml
 
-loki_defaults:
+loki:
+  enabled: true
   version: "latest"
+  base_dir: "{{ ansible_env.HOME }}/.iac-toolbox/loki"
   port: 3100
   retention_hours: 168  # 7 days
 
-alloy_defaults:
+alloy:
+  enabled: true
   version: "latest"
   port: 12345

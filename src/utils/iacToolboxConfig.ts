@@ -78,10 +78,24 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('  enabled: false');
   }
 
-  // Coming soon integrations — always disabled
+  // GitHub Runner
   lines.push('');
-  lines.push('github_runner:');
-  lines.push('  enabled: false # coming soon');
+  if (config.selectedIntegrations.includes('github_runner')) {
+    lines.push('github_runner:');
+    lines.push('  enabled: true');
+    lines.push('  version: "latest"');
+    lines.push('  work_dir: "~/.iac-toolbox/github-runner"');
+    lines.push('  labels: "self-hosted,ARM64"');
+    lines.push(
+      '  repo_url: "{{ github_runner_repo_url }}" # injected by CLI at deploy time'
+    );
+    lines.push(
+      '  token: "{{ github_runner_token }}" # injected by CLI at deploy time'
+    );
+  } else {
+    lines.push('github_runner:');
+    lines.push('  enabled: false # coming soon');
+  }
   lines.push('');
 
   // Cloudflare
@@ -112,6 +126,7 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('vault:');
     lines.push('  enabled: true');
     lines.push(`  version: "${v.version}"`);
+    lines.push('  base_dir: "~/.iac-toolbox/vault"');
     lines.push(`  port: ${v.port}`);
     lines.push(`  enable_kv: ${v.enableKv}`);
     lines.push(`  enable_audit: ${v.enableAudit}`);
@@ -130,14 +145,14 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('grafana:');
     lines.push('  enabled: true');
     lines.push('  version: "latest"');
+    lines.push('  base_dir: "~/.iac-toolbox/grafana"');
     lines.push('  port: 3000');
     lines.push('  admin_user: "admin"');
     lines.push(
       '  admin_password: "{{ grafana_admin_password }}" # injected by CLI at deploy time'
     );
-    if (g.domain) {
-      lines.push(`  domain: "${g.domain}"`);
-    }
+    lines.push(`  domain: "${g.domain || 'localhost'}"`);
+    lines.push('  vault_path: "kv/observability/grafana"');
   } else {
     lines.push('grafana:');
     lines.push('  enabled: false # coming soon');
@@ -171,6 +186,7 @@ export function generateIacToolboxYaml(config: IacToolboxYamlConfig): string {
     lines.push('loki:');
     lines.push('  enabled: true');
     lines.push('  version: "latest"');
+    lines.push('  base_dir: "~/.iac-toolbox/loki"');
     lines.push('  port: 3100');
     lines.push('  retention_hours: 168');
   } else {
