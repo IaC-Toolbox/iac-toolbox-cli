@@ -1,3 +1,5 @@
 ---
 # Cloudflare tunnel role defaults
-cloudflare_enabled: true
+cloudflare:
+  enabled: true
+  tunnel_name: ""

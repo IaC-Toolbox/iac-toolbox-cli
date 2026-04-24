@@ -1,3 +1,9 @@
 ---
 # GitHub runner role defaults
-github_runner_enabled: true
+github_runner:
+  enabled: true
+  version: "latest"
+  work_dir: "{{ ansible_env.HOME }}/.iac-toolbox/github-runner"
+  labels: "self-hosted,ARM64"
+  repo_url: ""
+  token: ""
