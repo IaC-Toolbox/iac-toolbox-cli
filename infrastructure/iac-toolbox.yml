@@ -25,5 +25,11 @@ vault:
 grafana:
   enabled: false # coming soon
 
+prometheus:
+  enabled: false
+
+loki:
+  enabled: false
+
 pagerduty:
   enabled: false # coming soon

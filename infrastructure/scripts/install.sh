@@ -177,7 +177,6 @@ if [ "$RUN_ANSIBLE" = true ]; then
 
   # Load iac-toolbox.yml configuration file
   # Priority: 1) IAC_TOOLBOX_CONFIG env var, 2) infrastructure/ folder, 3) ~/.iac-toolbox/
-  echo $PROJECT_ROOT
   IAC_CONFIG_FILE=""
   if [ -n "$IAC_TOOLBOX_CONFIG" ] && [ -f "$IAC_TOOLBOX_CONFIG" ]; then
     IAC_CONFIG_FILE="$IAC_TOOLBOX_CONFIG"
