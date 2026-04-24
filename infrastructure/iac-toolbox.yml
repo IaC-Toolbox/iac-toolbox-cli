@@ -28,6 +28,7 @@ grafana:
 prometheus:
   enabled: true
   version: "latest"
+  base_dir: "~/.iac-toolbox/observability"
   port: 9090
   scrape_interval: "15s"
   retention: "15d"
