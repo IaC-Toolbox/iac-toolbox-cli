@@ -1,3 +1,4 @@
+import path from 'path';
 import { Box, Text } from 'ink';
 import TextInput from 'ink-text-input';
 import { useState, useEffect } from 'react';
@@ -127,7 +128,7 @@ export default function GitHubBuildWorkflowDialog({
   }
 
   // step === 'imageName'
-  const defaultImageName = `${username}/my-repo`;
+  const defaultImageName = `${username}/${path.basename(process.cwd())}`;
   const handleSubmit = (value: string) => {
     const finalValue = value.trim() || defaultImageName;
     onComplete({
