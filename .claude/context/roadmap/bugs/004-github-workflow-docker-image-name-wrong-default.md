@@ -1,7 +1,7 @@
 ---
-status: draft
-completed_date:
-pr_url:
+status: completed
+completed_date: 2026-04-24
+pr_url: https://github.com/IaC-Toolbox/iac-toolbox-cli/pull/137
 ---
 
 # Bug: GitHub Build Workflow Docker image name defaults to hardcoded `my-repo`

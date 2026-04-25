@@ -10,7 +10,7 @@ docker:
 github_build_workflow:
   enabled: true
   docker_hub_username: "vvasylkovskyi1"
-  docker_image_name: "vvasylkovskyi1/my-repo"
+  docker_image_name: "vvasylkovskyi1/iac-toolbox-cli"
   docker_hub_token: "{{ docker_hub_token }}" # injected by CLI at deploy time
 
 github_runner:
@@ -26,7 +26,12 @@ grafana:
   enabled: false # coming soon
 
 prometheus:
-  enabled: false
+  enabled: true
+  version: "latest"
+  base_dir: "~/.iac-toolbox/observability"
+  port: 9090
+  scrape_interval: "15s"
+  retention: "15d"
 
 loki:
   enabled: false
