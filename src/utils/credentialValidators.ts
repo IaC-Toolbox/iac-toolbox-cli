@@ -175,6 +175,16 @@ async function validatePagerDutyKey(key: string): Promise<ValidationResult> {
 }
 
 /**
+ * Accept any non-empty string value (no remote API to validate against).
+ */
+async function validateStringValue(value: string): Promise<ValidationResult> {
+  if (!value || value.trim() === '') {
+    return { valid: false, message: 'Value is empty' };
+  }
+  return { valid: true, message: 'Value accepted' };
+}
+
+/**
  * Map of credential key to its validator function.
  */
 const validators: Record<
@@ -182,7 +192,10 @@ const validators: Record<
   (value: string) => Promise<ValidationResult>
 > = {
   docker_hub_token: validateDockerHubToken,
+  docker_hub_username: validateStringValue,
   github_pat: validateGitHubPat,
+  github_runner_token: validateStringValue,
+  github_runner_repo_url: validateStringValue,
   cloudflare_tunnel_token: validateCloudflareToken,
   vault_token: validateVaultToken,
   grafana_api_key: validateGrafanaApiKey,

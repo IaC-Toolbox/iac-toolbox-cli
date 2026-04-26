@@ -147,7 +147,7 @@ grafana
     };
     const result = spawnSync(
       'bash',
-      ['infrastructure/scripts/install.sh', '--ansible-only', '--local'],
+      ['infrastructure/scripts/install.sh', '--grafana', '--local'],
       {
         env,
         stdio: 'inherit',
@@ -165,6 +165,104 @@ grafana
       'bash',
       ['infrastructure/scripts/uninstall-loki.sh', '--local'],
       {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const loki = program.command('loki').description('Manage Loki log collection');
+
+loki
+  .command('install')
+  .description('Install or reinstall Loki log collection')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--loki', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const prometheus = program
+  .command('prometheus')
+  .description('Manage Prometheus metrics collection');
+
+prometheus
+  .command('install')
+  .description('Install or reinstall Prometheus metrics collection')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const result = spawnSync(
+      'bash',
+      ['infrastructure/scripts/install.sh', '--prometheus', '--local'],
+      {
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const githubBuildWorkflow = program
+  .command('github-build-workflow')
+  .description('Manage GitHub Build Workflow templates');
+
+githubBuildWorkflow
+  .command('install')
+  .description('Install or reinstall GitHub Build Workflow templates')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = {
+      ...process.env,
+      DOCKER_HUB_TOKEN: creds.docker_hub_token || '',
+      DOCKER_HUB_USERNAME: creds.docker_hub_username || '',
+    };
+    const result = spawnSync(
+      'bash',
+      [
+        'infrastructure/scripts/install.sh',
+        '--github-build-workflow',
+        '--local',
+      ],
+      {
+        env,
+        stdio: 'inherit',
+      }
+    );
+    process.exit(result.status ?? 1);
+  });
+
+const githubRunner = program
+  .command('github-runner')
+  .description('Manage GitHub Actions self-hosted runner');
+
+githubRunner
+  .command('install')
+  .description('Install or reinstall GitHub Actions self-hosted runner')
+  .action(async () => {
+    const { spawnSync } = await import('child_process');
+    const { loadCredentials } = await import('./utils/credentials.js');
+    const creds = loadCredentials('default');
+    const env = {
+      ...process.env,
+      GITHUB_RUNNER_TOKEN: creds.github_runner_token || '',
+      GITHUB_RUNNER_REPO_URL: creds.github_runner_repo_url || '',
+    };
+    const result = spawnSync(
+      'bash',
+      [
+        'infrastructure/scripts/install.sh',
+        '--promote-to-github-runner',
+        '--local',
+      ],
+      {
+        env,
         stdio: 'inherit',
       }
     );
