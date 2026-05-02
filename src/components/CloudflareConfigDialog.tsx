@@ -42,7 +42,8 @@ export async function validateToken(
     );
     if (res.ok) {
       const data = (await res.json()) as { success?: boolean };
-      if (data.success !== false) return { valid: true, message: 'Token validated' };
+      if (data.success !== false)
+        return { valid: true, message: 'Token validated' };
     }
     return { valid: false, message: `Invalid token (status ${res.status})` };
   } catch {
